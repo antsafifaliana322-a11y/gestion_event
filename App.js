@@ -14,9 +14,17 @@ app.use(session({
     saveUninitialized: true
 }));
 
-const db = mysql.createConnection({
+/*const db = mysql.createConnection({
     host: 'localhost', user: 'root', password: '', 
     database: 'agence_event', multipleStatements: true 
+});*/
+const db = mysql.createConnection({
+    host: process.env.MYSQLHOST || 'localhost',
+    user: process.env.MYSQLUSER || 'root',
+    password: process.env.MYSQLPASSWORD || '',
+    database: process.env.MYSQLDATABASE || 'agence_event',
+    port: process.env.MYSQLPORT || 3306,
+    multipleStatements: true 
 });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
