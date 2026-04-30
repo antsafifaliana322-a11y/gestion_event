@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventLogix | Dashboard Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        /* Force le défilement horizontal sur tous les conteneurs de tableaux sur mobile */
+table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Optionnel : empêche les textes de se couper pour garder une ligne propre */
+table td, table th {
+    white-space: nowrap;
+}
+    </style>
+</head>
+<body class="bg-slate-50 p-8" x-data="{menuOpen: false, panier: [], selectedMat: '', selectedMatNom: '', qte: 1 }">
+    
+    <div x-show="menuOpen" x-transition.opacity class="fixed inset-0 bg-slate-900/40 z-40" @click="menuOpen = false"></div>
+
+   <div x-show="menuOpen" 
+     x-data="{ openSection: null }" 
+     class="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 p-6 overflow-y-auto border-l border-slate-200"
+     @click.away="menuOpen = false">
+    
+    <div class="flex justify-between items-center mb-8 border-b pb-4">
+        <h2 class="text-xl font-bold text-slate-800">⚙️ Administration</h2>
+        <button @click="menuOpen = false" class="text-slate-400 hover:text-red-500 text-3xl">&times;</button>
+    </div>
+    <a href="/evenements" class="w-full flex justify-between items-center p-4 bg-slate-800 text-white rounded-xl hover:bg-blue-600 transition-all font-bold mb-4">
+    <span>📅 Gérer les Événements</span>
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
+    <div class="space-y-4">
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+          <a href="/inventaire" class="w-full flex justify-between items-center p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg shadow-blue-200">
+    <span>📊 Visualiser l'Inventaire complet</span>
+   
+</a>
+            
+            <div x-show="openSection === 'liste'" x-collapse class="bg-white p-4 border-t border-slate-100 max-h-80 overflow-y-auto">
+                <% if (materiels.length === 0) { %>
+                    <p class="text-xs text-slate-400 italic text-center">Aucun matériel enregistré.</p>
+                <% } %>
+                <div class="space-y-3">
+                    <% materiels.forEach(m => { %>
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-50 last:border-0">
+                            <div>
+                                <div class="text-sm font-semibold text-slate-800"><%= m.nom_article %></div>
+                                <div class="text-[10px] text-blue-500 font-bold uppercase"><%= m.type_prestation || 'Général' %></div>
+                            </div>
+                            <div class="bg-slate-100 px-3 py-1 rounded-lg text-sm font-black text-slate-700">
+                                <%= m.stock_agence %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+            <button @click="openSection === 'ajout_mat' ? openSection = null : openSection = 'ajout_mat'" 
+                    class="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
+                <span class="font-bold text-slate-700 flex items-center">
+                    <span class="mr-2">➕</span> Ajouter un article
+                </span>
+                <svg class="w-4 h-4 transition-transform" :class="openSection === 'ajout_mat' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <div x-show="openSection === 'ajout_mat'" x-collapse class="bg-white p-4 border-t border-slate-100">
+                <form action="/admin/materiel" method="POST" class="space-y-3">
+                    <input type="text" name="nom_article" placeholder="Nom de l'article" class="w-full border p-2 text-sm rounded-lg" required>
+                    <input type="number" name="stock_agence" placeholder="Stock initial" class="w-full border p-2 text-sm rounded-lg" required>
+               <select name="id_prestation" class="w-full border p-2 rounded-lg mb-4" required>
+        <option value="">-- Choisir --</option>
+        <% prestations.forEach(p => { %>
+            <option value="<%= p.id %>"><%= p.nom_prestation %></option>
+        <% }) %>
+    </select>
+                    <button type="submit" class="w-full bg-slate-800 text-white p-2 rounded-lg text-xs font-bold">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="border border-slate-100 rounded-xl overflow-hidden">
+            <button @click="openSection === 'ajout_fourn' ? openSection = null : openSection = 'ajout_fourn'" 
+                    class="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
+                <span class="font-bold text-slate-700 flex items-center">
+                    <span class="mr-2">🤝</span> Ajouter un fournisseur
+                </span>
+                <svg class="w-4 h-4 transition-transform" :class="openSection === 'ajout_fourn' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+
+            <div x-show="openSection === 'ajout_fourn'" x-collapse class="bg-white p-4 border-t border-slate-100">
+                <form action="/admin/fournisseur" method="POST" class="space-y-3">
+                    <input type="text" name="nom_societe" placeholder="Nom de la société" class="w-full border p-2 text-sm rounded-lg" required>
+                    <button type="submit" class="w-full bg-emerald-600 text-white p-2 rounded-lg text-xs font-bold">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="max-w-6xl mx-auto">
+        
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Tableau de Bord <span class="text-blue-600">Logistique</span></h1>
+            <button @click="menuOpen = true" class="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-all font-semibold text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                <span>Gérer les ressources</span>
+            </button>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
+    <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
+        <span class="bg-blue-600 text-white p-2 rounded-lg text-sm">📦</span>
+        Planification de Sortie de Stock
+    </h2>
+<form action="/reserver-groupe" method="POST" class="space-y-6">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-800 p-6 rounded-3xl shadow-lg border border-slate-700">
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2">Événement Cible</label>
+            <select name="id_event" class="w-full bg-slate-700 border-none text-white p-3 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500" required>
+                <option value="">-- Choisir l'événement --</option>
+                <% evenements.forEach(ev => { %>
+                    <option value="<%= ev.id %>"><%= ev.titre %></option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 text-center">Fournisseur de secours (si stock insuffisant)</label>
+            <select name="id_fournisseur" class="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl font-bold outline-none focus:border-blue-500">
+                <option value="">-- Choisir un fournisseur --</option>
+                <% fournisseurs.forEach(f => { %>
+                    <option value="<%= f.id %>"><%= f.nom_societe %></option>
+                <% }) %>
+            </select>
+        </div>
+    </div>
+<div x-data="{ openGroup: null }" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <% for (let prestation in materielsGroupes) { %>
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col group-container">
+            
+            <!-- En-tête CLIQUABLE -->
+            <div @click="openGroup = (openGroup === '<%= prestation %>') ? null : '<%= prestation %>'" 
+                 class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors">
+                
+                <div class="flex items-center gap-2">
+                    <h3 class="font-black text-slate-800 uppercase tracking-wider text-sm italic">⭐ <%= prestation %></h3>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform duration-300" 
+                         :class="openGroup === '<%= prestation %>' ? 'rotate-180' : ''" 
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+
+                <span class="text-[10px] bg-white px-2 py-1 rounded-lg border border-slate-200 font-bold text-slate-400">
+                    <%= materielsGroupes[prestation].length %> ARTICLES
+                </span>
+            </div>
+
+            <!-- BARRE DE RECHERCHE (Apparaît si ouvert) -->
+            <div x-show="openGroup === '<%= prestation %>'" class="px-4 py-2 bg-white border-b border-slate-50">
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Rechercher un matériel..." 
+                           onkeyup="filtrerListe(this)"
+                           class="w-full pl-8 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                    <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Liste avec défilement -->
+            <div x-show="openGroup === '<%= prestation %>'" 
+                 x-collapse
+                 class="p-4 space-y-4 overflow-y-auto max-h-[400px] custom-scrollbar container-liste">
+                
+                <% materielsGroupes[prestation].forEach(m => { %>
+                    <div class="flex justify-between items-center p-2 border-b border-slate-50 article-row group hover:bg-slate-50/50 transition-all rounded-xl">
+                        
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" name="materiels[]" value="<%= m.id %>" 
+                                   onchange="toggleRow(this)"
+                                   class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                            
+                            <div>
+                                <span class="font-bold text-slate-700 text-sm group-hover:text-blue-600 item-name"><%= m.nom_article %></span>
+                                <div class="text-[10px] <%= m.stock_agence <= 0 ? 'text-red-500 font-bold' : 'text-gray-500' %>">
+                                    Disponibilité : <%= m.stock_agence %>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right qte-area opacity-20 pointer-events-none transition-all">
+                            <input type="number" name="quantites[]" min="1" value="1" disabled
+                                   class="w-16 border-2 border-slate-100 bg-slate-100 rounded-lg text-center font-bold outline-none focus:border-blue-500 text-xs p-1">
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    <% } %>
+</div>
+</div>
+    <script>
+        function filterSection(input) {
+    const filter = input.value.toLowerCase();
+    const container = input.closest('.flex-col'); // On cible la carte actuelle
+    const items = container.querySelectorAll('.article-row');
+
+    items.forEach(item => {
+        const text = item.querySelector('span').innerText.toLowerCase();
+        item.style.display = text.includes(filter) ? 'flex' : 'none';
+    });
+}
+function filtrerListe(input) {
+    // Le texte recherché en minuscule
+    const filter = input.value.toLowerCase();
+    
+    // On trouve le conteneur parent pour ne pas filtrer les autres groupes
+    const container = input.closest('.group-container');
+    const rows = container.querySelectorAll('.article-row');
+
+    rows.forEach(row => {
+        const name = row.querySelector('.item-name').innerText.toLowerCase();
+        
+        // Si le nom contient le texte, on affiche, sinon on cache
+        if (name.includes(filter)) {
+            row.style.display = 'flex';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+    </script>
+</div>
+
+    <button type="submit" class="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-blue-600 shadow-xl transition-all">
+        VALIDER LA PLANIFICATION GLOBALE
+    </button>
+</form>
+                </div>   
+    </form>
+    <script>
+function toggleRow(checkbox) {
+    // On remonte jusqu'à la ligne parente qui contient TOUT (checkbox + qte)
+    const row = checkbox.closest('.article-row');
+    const qteArea = row.querySelector('.qte-area');
+    const qteInput = qteArea.querySelector('input');
+
+    if (checkbox.checked) {
+        // Active le champ
+        qteArea.classList.remove('opacity-20', 'pointer-events-none');
+        qteInput.disabled = false;
+        qteInput.classList.replace('bg-slate-100', 'bg-blue-50');
+        qteInput.name = "quantites[]"; 
+    } else {
+        // Désactive le champ
+        qteArea.classList.add('opacity-20', 'pointer-events-none');
+        qteInput.disabled = true;
+        qteInput.classList.replace('bg-blue-50', 'bg-slate-100');
+        qteInput.name = ""; 
+        qteInput.value = 1; // Optionnel : reset à 1 quand on décoche
+    }
+}
+</script>
+</div>
+
+<script>
+function ajouterLigne() {
+    const container = document.getElementById('liste-articles');
+    const template = container.firstElementChild.cloneNode(true);
+    
+    // Reset les valeurs
+    template.querySelector('input').value = 1;
+    // Activer le bouton supprimer pour les nouvelles lignes
+    const delBtn = template.querySelector('button');
+    delBtn.classList.remove('opacity-0', 'pointer-events-none');
+    delBtn.setAttribute('onclick', 'this.parentElement.remove()');
+    
+    container.appendChild(template);
+}
+</script>
+</div>
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+            <table class="w-full text-left">
+                <thead class="bg-slate-800 text-white text-xs uppercase tracking-widest">
+                    <tr>
+                        <th class="p-5 font-semibold">Événement</th>
+                        <th class="p-5 font-semibold">Matériel</th>
+                        <th class="p-5 font-semibold text-center">Besoin</th>
+                        <th class="p-5 font-semibold">Répartition Stock</th>
+                        <th class="p-5 font-semibold">Statut Logistique</th>
+                         <th class="p-5 font-semibold text-right">statut</th>
+                          <th class="p-5 font-semibold text-right">Action</th>
+                          
+                          
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <% if (reservations.length === 0) { %>
+                        <tr>
+                            <td colspan="6" class="p-10 text-center text-slate-400 italic">Aucune donnée planifiée.</td>
+                        </tr>
+                    <% } %>
+
+                    <% reservations.forEach(res => { %>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-5">
+                                <span class="font-bold text-slate-700 block"><%= res.event_nom %></span>
+                            </td>
+                            <td class="p-5 text-slate-600 text-sm"><%= res.nom_article %></td>
+                            <td class="p-5">
+                                <form action="/update/<%= res.id_res %>" method="POST" class="flex justify-center items-center space-x-2">
+                                    <input type="number" name="new_qte" value="<%= res.quantite_voulue %>" class="w-14 border border-slate-200 rounded p-1 text-center font-bold text-blue-600 text-sm">
+                                    <button type="submit" class="opacity-40 hover:opacity-100 transition-opacity" title="Mettre à jour">💾</button>
+                                </form>
+                            </td>
+                            <td class="p-5">
+                                <div class="text-[11px] leading-relaxed">
+                                    <div class="flex justify-between w-24">
+                                        <span class="text-slate-400">Agence :</span>
+                                        <span class="font-bold text-slate-700"><%= res.qte_agence %></span>
+                                    </div>
+                                    <% if (res.qte_fournisseur > 0) { %>
+                                    <div class="flex justify-between w-24">
+                                        <span class="text-slate-400">Externe :</span>
+                                        <span class="font-bold text-amber-600"><%= res.qte_fournisseur %></span>
+                                    </div>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="p-5">
+                                <% if (res.qte_fournisseur > 0) { %>
+                                    <div class="inline-flex items-center px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black uppercase">
+                                        ⚠️ Louer chez <%= res.fournisseur_nom %>
+                                    </div>
+                                <% } else { %>
+                                    <div class="inline-flex items-center px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase">
+                                        ✅ Stock Interne OK
+                                    </div>
+                                <% } %>
+                            </td>
+                              <td class="p-5 text-right">
+    <% if (res.statut !== 'rendu') { %>
+    <form action="/admin/retour-materiel" method="POST">
+        <input type="hidden" name="id_reservation" value="<%= res.id_res %>"> 
+        <input type="hidden" name="id_materiel" value="<%= res.id %>">
+        <input type="hidden" name="qte_agence" value="<%= res.qte_agence %>">
+        
+        <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded-lg text-xs font-bold">
+            MARQUER RENDU
+        </button>
+    </form>
+<% } else { %>
+    <span class="text-green-600 font-bold">✅ Terminé</span>
+<% } %>
+                             </td>
+                            <td class="p-5 text-right">
+                                <a href="/delete/<%= res.id_res %>" 
+                                   onclick="return confirm('Confirmer la suppression ?')" 
+                                   class="text-slate-300 hover:text-red-500 transition-colors">
+                                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </a>
+                                
+                            </td>
+                           
+                            
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="mt-20 text-center text-slate-400 text-[10px] uppercase tracking-widest pb-10">
+        &copy; 2026 EventLogix ERP System • Intelligent Supply Management
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Modifier matériel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 p-10">
+    <div class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+        <h1 class="text-xl font-black text-slate-800 mb-6">Modifier l'article</h1>
+        
+        <form action="/admin/update-materiel/<%= materiel.id %>" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nom de l'article</label>
+                <input type="text" name="nom_article" value="<%= materiel.nom_article %>" required
+                       class="w-full border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Stock</label>
+                <input type="number" name="stock_agence" value="<%= materiel.stock_agence %>" required
+                       class="w-full border border-slate-200 p-3 rounded-xl outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Catégorie (Prestation)</label>
+                <select name="id_prestation" class="w-full border border-slate-200 p-3 rounded-xl outline-none">
+                    <% prestations.forEach(p => { %>
+                        <option value="<%= p.id %>" <%= p.id === materiel.id_prestation ? 'selected' : '' %>>
+                            <%= p.nom_prestation %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all">Enregistrer</button>
+                <a href="/inventaire" class="flex-1 bg-slate-100 text-center text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all">Annuler</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

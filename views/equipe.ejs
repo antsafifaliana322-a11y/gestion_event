@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+ <div style="padding: 20px; font-family: sans-serif;">
+    <h1>Gestion des Équipes</h1>
+
+    <!-- Formulaire d'ajout -->
+    <form action="/admin/ajouter-membre" method="POST" style="background: #f4f4f4; padding: 20px; border-radius: 10px;">
+        <h3>Ajouter un collaborateur</h3>
+        <input type="text" name="nom" placeholder="Nom" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        
+        <label>Rôle :</label>
+        <select name="id_role">
+            <% roles.forEach(role => { %>
+                <option value="<%= role.id %>"><%= role.nom_role %></option>
+            <% }) %>
+        </select>
+        
+        <button type="submit">Enregistrer</button>
+    </form>
+
+    <hr>
+
+    <!-- Liste de l'équipe -->
+    <table border="1" width="100%" style="margin-top: 20px; text-align: left;">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Rôle</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% membres.forEach(m => { %>
+                <tr>
+                    <td><%= m.nom %></td>
+                    <td><strong><%= m.nom_role %></strong></td>
+                    <td><%= m.email %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>   
+</body>
+</html>

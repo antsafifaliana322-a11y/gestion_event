@@ -1,0 +1,567 @@
+C'est une excellente question technique. C'est exactement le genre de défis qu'on rencontre en déploiement réel. Ne t'inquiète pas, Node.js est très flexible, mais il y a une procédure précise pour éviter les bugs.
+
+Voici comment gérer la compatibilité et les dépendances :
+
+### 1. La compatibilité de Node.js
+En général, si ton projet tourne sous une version récente (Node 16, 18, 20 ou 22), il y a de fortes chances qu'il fonctionne sur l'autre PC sans modification.
+* **Le test à faire :** Dès que tu arrives sur l'autre PC, ouvre un terminal (CMD) et tape `node -v`.
+* Si la version affichée est **supérieure ou égale** à la tienne, tout ira bien.
+* Si elle est beaucoup plus ancienne (ex: Node 12), il faudra peut-être mettre à jour Node sur ce PC pour supporter certaines syntaxes modernes.
+
+### 2. Les Dépendances (npm install)
+**Oui, tu dois les réinstaller**, mais c'est très simple grâce à ton fichier `package.json`.
+* **Pourquoi ?** Le dossier `node_modules` contient des fichiers compilés spécifiquement pour le système d'exploitation et l'architecture du PC. En le copiant directement d'un PC à l'autre, tu risques des erreurs bizarres.
+* **Comment faire ?** Une fois ton code copié sur le nouveau PC :
+    1.  Ouvre le terminal dans le dossier du projet.
+    2.  Tape simplement : `npm install`
+    3.  Node va lire ton fichier `package.json` et télécharger automatiquement toutes les versions exactes de `express`, `mysql2`, `ejs`, etc.
+
+---
+
+### 📋 Ta "Checklist" pour le jour J
+
+Pour être sûre de ne rien oublier sur ta clé USB, voici ce que tu dois emporter :
+
+1.  **Ton code source :** `app.js`, dossier `views/`, dossier `public/` (si tu en as un).
+2.  **La configuration :** Les fichiers `package.json` et `package-lock.json`.
+3.  **La base de données :** Ton export `agence_event.sql`.
+4.  **L'installateur Node.js :** Par précaution, télécharge l'installateur Windows de Node.js (version LTS) et mets-le sur ta clé. Si le PC cible a une version trop vieille ou n'en a pas, tu pourras l'installer sans internet.
+
+### 💡 Le petit "Plus" pour ta présentation
+Si tu n'es pas satisfaite de la fonctionnalité des archives, on peut faire une modification rapide avant ton départ : 
+* Au lieu de cacher les événements passés, on peut les laisser dans la liste mais les **"verrouiller"** (bouton grisé) pour qu'on ne puisse plus réserver dessus. 
+* Cela permet de montrer l'historique directement sur la page principale sans changer de page.
+
+
+
+Est-ce que tu veux qu'on tente ce changement visuel avant que tu ne prépares ta clé USB, ou tu préfères rester sur la séparation avec la page Archives ?
+
+ <div class="p-4 space-y-3 max-h-80 overflow-y-auto bg-white">
+                    <% materielsGroupes[prestation].forEach(m => { %>
+                        <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-50 hover:bg-slate-50 transition-all">
+                            <input type="checkbox" name="materiels[]" value="<%= m.id %>" 
+                                   class="w-5 h-5 rounded-md border-slate-300 text-blue-600 cursor-pointer"
+                                   onchange="toggleRow(this)">
+                            
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-700"><%= m.nom_article %></p>
+                                <p class="text-[10px] <%= m.stock_agence < 5 ? 'text-red-500' : 'text-slate-400' %> font-bold">
+                                    Stock Agence : <%= m.stock_agence %>
+                                </p>
+                            </div>
+
+                            <div class="w-24 opacity-20 pointer-events-none transition-all qte-area">
+                                <input type="number" name="quantites_brutes[]" value="1" min="1"
+                                       class="w-full bg-slate-100 border-none p-2 rounded-xl text-xs font-black text-center outline-none">
+                                </div>
+                        </div>
+                    <% }) %>
+                </div>
+                // UPDATE (Modification rapide de la quantité)
+/*app.post('/update/:id', (req, res) => {
+    const { new_qte } = req.body;
+    db.query('SELECT id_materiel FROM reservation WHERE id = ?', [req.params.id], (err, row) => {
+        db.query('SELECT stock_agence FROM materiel WHERE id = ?', [row[0].id_materiel], (err, results) => {
+            const stock = results[0].stock_agence;
+            const voulu = parseInt(new_qte);
+            let qte_ag = voulu > stock ? stock : voulu;
+            let qte_f = voulu > stock ? (voulu - stock) : 0;
+            db.query('UPDATE reservation SET quantite_voulue=?, qte_agence=?, qte_fournisseur=? WHERE id=?', 
+            [voulu, qte_ag, qte_f, req.params.id], () => res.redirect('/'));
+        });
+    });
+});
+*/
+// TRAITER le formulaire de connexion
+/*app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    
+    // Requête pour vérifier l'utilisateur et son rôle (Table agence)
+    const sql = `
+        SELECT a.*, r.nom_role 
+        FROM agence a 
+        JOIN roles r ON a.id_role = r.id 
+        WHERE a.email = ? AND a.mot_de_passe = ?`;
+
+    db.query(sql, [email, password], (err, result) => {
+        if (err) throw err;
+        
+        if (result.length > 0) {
+            // On enregistre l'utilisateur dans la session
+            req.session.user = result[0]; 
+            res.redirect('/'); // Redirige vers l'accueil après succès
+        } else {
+            res.send("Email ou mot de passe incorrect");
+        }
+    });
+});*/
+/*app.get('/inventaire', (req, res) => {
+    const sql = `
+        SELECT m.*, p.nom_prestation 
+        FROM materiel m 
+        LEFT JOIN prestation p ON m.id_prestation = p.id
+        ORDER BY p.nom_prestation ASC`;
+    
+    db.query(sql, (err, results) => {
+        if (err) throw err;
+
+        // --- LA LOGIQUE DE GROUPEMENT EST ICI ---
+        const monGroupage = {}; // On crée un objet vide
+
+        results.forEach(m => {
+            // Si la prestation est vide, on met "Non classé"
+            const nomP = m.nom_prestation || "Non classé"; 
+            
+            // Si la catégorie n'existe pas encore dans l'objet, on la crée
+            if (!monGroupage[nomP]) {
+                monGroupage[nomP] = [];
+            }
+            // On ajoute le matériel dans sa catégorie
+            monGroupage[nomP].push(m);
+        });
+
+        // --- TRÈS IMPORTANT : On envoie 'groupes' à la vue ---
+        res.render('inventaire', { groupes: monGroupage });
+    });
+});
+app.get('/inventaire', (req, res) => {
+    // On s'assure de bien prendre m.stock_total dans le SELECT m.*
+    const sql = `
+        SELECT m.*, p.nom_prestation 
+        FROM materiel m 
+        LEFT JOIN prestation p ON m.id_prestation = p.id
+        ORDER BY p.nom_prestation ASC`;
+    
+    db.query(sql, (err, results) => {
+        if (err) throw err;
+
+        const monGroupage = {};
+        results.forEach(m => {
+            const nomP = m.nom_prestation || "Non classé"; 
+            if (!monGroupage[nomP]) monGroupage[nomP] = [];
+            monGroupage[nomP].push(m);
+        });
+
+        res.render('inventaire', { groupes: monGroupage });
+    });
+});*/
+/*app.get('/inventaire', (req, res) => {
+    // On récupère le matériel joint à sa prestation
+    const sql = `
+        SELECT m.*, p.nom_prestation 
+        FROM materiel m
+        LEFT JOIN prestation p ON m.id_prestation = p.id
+        ORDER BY p.nom_prestation, m.nom_article`;
+
+    db.query(sql, (err, results) => {
+        if (err) throw err;
+
+        // On organise les données par groupe de prestation en JavaScript
+        const inventaireGroupe = results.reduce((acc, item) => {
+            const prestation = item.nom_prestation || "Non classé";
+            if (!acc[prestation]) acc[prestation] = [];
+            acc[prestation].push(item);
+            return acc;
+        }, {});
+
+        res.render('inventaire', { inventaireGroupe });
+    });
+});*//*app.get('/historique', (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    const sql = `
+        SELECT h.*, a.nom as nom_utilisateur, r.nom_role, m.nom_article 
+        FROM historique_mouvements h
+        JOIN agence a ON h.id_utilisateur = a.id
+        JOIN roles r ON a.id_role = r.id
+        JOIN materiel m ON h.id_materiel = m.id
+        ORDER BY h.date_action DESC`;
+
+    db.query(sql, (err, logs) => {
+        if (err) {
+            console.error("Erreur SQL :", err.sqlMessage);
+            return res.status(500).send("Erreur de récupération");
+        }
+        res.render('historique', { logs });
+    });
+});*/
+
+/*app.get('/historique', (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    const sql = `
+        SELECT h.*, a.nom as nom_utilisateur, r.nom_role, m.nom_article 
+        FROM historique_mouvements h
+        JOIN agence a ON h.id_utilisateur = a.id
+        JOIN roles r ON a.id_role = r.id
+        JOIN materiel m ON h.id_materiel = m.id
+        ORDER BY h.date_action DESC`;
+
+    db.query(sql, (err, logs) => {
+        if (err) throw err;
+        res.render('historique', { logs });
+    });
+});*/// Route pour ajouter un nouveau matériel au catalogue
+// --- SECTION ADMINISTRATION : AJOUT DE RESSOURCES ---
+
+// 1. Route pour ajouter un nouveau matériel
+/*app.post('/admin/materiel', (req, res) => {
+    // 1. On récupère bien les TROIS informations
+    const { nom_article, stock_agence, id_prestation } = req.body; 
+
+    // 2. On prépare l'insertion dans les TROIS colonnes
+    const sql = 'INSERT INTO materiel (nom_article, stock_agence, id_prestation) VALUES (?, ?, ?)';
+    
+    // 3. On passe les TROIS valeurs dans le tableau
+    db.query(sql, [nom_article, stock_agence, id_prestation], (err, result) => {
+        if (err) {
+            console.error("Erreur SQL :", err);
+            return res.status(500).send("Erreur lors de l'ajout");
+        }
+        res.redirect('/'); // Redirection vers l'accueil
+    });
+});*/
+// 1. Route pour ajouter un nouveau matériel (CORRIGÉE)
+/*app.post('/admin/materiel', (req, res) => {
+    // On récupère les données du formulaire
+    const { nom_article, stock_agence, id_prestation } = req.body; 
+
+    // 2. On prépare l'insertion dans les QUATRE colonnes (On ajoute stock_total)
+    const sql = 'INSERT INTO materiel (nom_article, stock_agence, stock_total, id_prestation) VALUES (?, ?, ?, ?)';
+    
+    // 3. On passe la valeur 'stock_agence' DEUX FOIS : 
+    // Une fois pour le stock actuel, une fois pour le stock total de départ.
+    db.query(sql, [nom_article, stock_agence, stock_agence, id_prestation], (err, result) => {
+        if (err) {
+            console.error("Erreur SQL :", err);
+            return res.status(500).send("Erreur lors de l'ajout");
+        }
+        res.redirect('/'); 
+    });
+});
+app.post('/admin/materiel', (req, res) => {
+    const { nom_article, stock_agence, id_prestation } = req.body; 
+
+    // On insère stock_agence DEUX FOIS : dans la colonne actuelle et dans la colonne total
+    const sql = 'INSERT INTO materiel (nom_article, stock_agence, stock_total, id_prestation) VALUES (?, ?, ?, ?)';
+    
+    db.query(sql, [nom_article, stock_agence, stock_agence, id_prestation], (err, result) => {
+        if (err) {
+            console.error("Erreur SQL :", err);
+            return res.status(500).send("Erreur lors de l'ajout");
+        }
+        res.redirect('/'); 
+    });
+});
+*/// CREATE
+/*app.post('/reserver', (req, res) => {
+    const { id_event, id_mat, qte_voulue, id_fournisseur } = req.body;
+    db.query('SELECT stock_agence FROM materiel WHERE id = ?', [id_mat], (err, results) => {
+        const stockDispo = results[0].stock_agence;
+        const voulu = parseInt(qte_voulue);
+        let qte_ag = voulu > stockDispo ? stockDispo : voulu;
+        let qte_f = voulu > stockDispo ? (voulu - stockDispo) : 0;
+        const fId = qte_f > 0 ? id_fournisseur : null;
+/*app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event } = req.body;
+    const sql = 'INSERT INTO evenement (titre, date_event, heure_event, lieu_event) VALUES (?, ?, ?, ?)';
+    
+    db.query(sql, [titre, date_event, heure_event, lieu_event], (err, result) => {
+        if (err) {
+            console.error("Erreur SQL :", err);
+            return res.status(500).send("Erreur lors de l'enregistrement.");
+        }
+        // Redirige vers la page de liste des événements et non l'accueil
+        res.redirect('/evenements'); 
+    });
+});*/
+        db.query('INSERT INTO reservation (id_evenement, id_materiel, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur) VALUES (?,?,?,?,?,?)', 
+        [id_event, id_mat, fId, voulu, qte_ag, qte_f], () => res.redirect('/'));
+    });
+});*/
+// AFF// Route pour gérer le retour du matériel et libérer le stock
+/*app.post('/admin/retour-materiel', (req, res) => {
+    const { id_reservation, id_materiel, qte_agence } = req.body;
+
+    // 1. On rajoute la quantité au stock de l'agence
+    const sqlUpdateStock = "UPDATE materiel SET stock_agence = stock_agence + ? WHERE id = ?";
+    
+    // 2. On passe le statut à 'rendu' pour valider la ligne
+    const sqlUpdateRes = "UPDATE reservation SET statut = 'rendu' WHERE id = ?";
+
+    db.query(sqlUpdateStock, [qte_agence, id_materiel], (err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Erreur lors de la mise à jour du stock");
+        }
+        
+        db.query(sqlUpdateRes, [id_reservation], (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Erreur lors du changement de statut");
+            }
+            // On redirige vers l'accueil pour voir les stocks mis à jour
+            res.redirect('/'); 
+        });
+    });
+});
+app.post('/admin/retour-materiel', (req, res) => {
+    // On convertit bien en Number pour éviter les erreurs de calcul SQL
+    const id_res = req.body.id_reservation;
+    const id_mat = req.body.id_materiel;
+    const qte = Number(req.body.qte_agence); 
+
+    const sqlUpdateStock = "UPDATE materiel SET stock_agence = stock_agence + ? WHERE id = ?";
+    const sqlUpdateRes = "UPDATE reservation SET statut = 'rendu' WHERE id = ?";
+
+    db.query(sqlUpdateStock, [qte, id_mat], (err) => {
+        if (err) throw err;
+        db.query(sqlUpdateRes, [id_res], (err) => {
+            if (err) throw err;
+            res.redirect('/'); // Redirection pour rafraîchir les données
+        });
+    });
+});*/
+// C'est cette route qui devient la référence officielle
+/*app.post('/admin/retour-materiel', (req, res) => {
+    const { id_res, id_materiel, qte_agence } = req.body;
+
+    // ÉTAPE 1 : Remise en stock
+    const sqlUpdateStock = "UPDATE materiel SET stock_agence = stock_agence + ? WHERE id = ?";
+    db.query(sqlUpdateStock, [qte_agence, id_materiel], (err) => {
+        if (err) return res.status(500).send("Erreur Stock: " + err.message);
+
+        // ÉTAPE 2 : Changement de statut de la ligne de réservation
+        const sqlUpdateStatus = "UPDATE reservation SET statut = 'rendu' WHERE id = ?";
+        db.query(sqlUpdateStatus, [id_res], (err) => {
+            if (err) return res.status(500).send("Erreur Statut: " + err.message);
+            
+            res.redirect('/'); 
+        });
+    });
+});*/
+/*app.post('/admin/retour-materiel', (req, res) => {
+    const { id_res, id_materiel, qte_agence } = req.body;
+
+    // --- ZONE DE TEST ---
+    console.log("--- DONNÉES REÇUES ---");
+    console.log("ID Réservation:", id_res);
+    console.log("ID Matériel:", id_materiel);
+    console.log("Quantité à rendre:", qte_agence);
+    console.log("-----------------------");
+
+    if (!id_res || !id_materiel) {
+        console.log("❌ Erreur : Données manquantes dans req.body");
+        return res.status(400).send("Données incomplètes");
+    }
+    // ... reste du code
+});
+app.post('/admin/retour-materiel', (req, res) => {
+    const { id_reservation, id_materiel, qte_agence } = req.body;
+
+    // Log de contrôle pour le débogage
+    console.log(`Données : Res=${id_reservation}, Mat=${id_materiel}, Qté=${qte_agence}`);
+
+    // Si l'ID matériel est vide, on arrête tout de suite pour éviter le freeze
+    if (!id_materiel || id_materiel === '') {
+        console.error("❌ ERREUR : L'ID matériel est vide dans le formulaire !");
+        return res.status(400).send("ID matériel manquant. Vérifiez votre fichier EJS.");
+    }
+
+    const qte = parseInt(qte_agence) || 0;
+
+    // Mise à jour du stock (Table: materiel, Colonne: id)
+    db.query("UPDATE materiel SET stock_agence = stock_agence + ? WHERE id = ?", [qte, id_materiel], (err) => {
+        if (err) return res.status(500).send(err.message);
+
+        // Mise à jour du statut (Table: reservation, Colonne: id)
+        db.query("UPDATE reservation SET statut = 'rendu' WHERE id = ?", [id_reservation], (err) => {
+            if (err) return res.status(500).send(err.message);
+            
+            console.log(`✅ Stock réinitialisé pour l'article n°${id_materiel}`);
+            res.redirect('/');
+        });
+    });
+});*/
+// Route pour traiter le panier (plusieurs matériels d'un coup)
+/*app.post('/reserver-groupe', (req, res) => {
+    const { id_event, materiels, quantites, id_fournisseur } = req.body;
+
+    // Vérification si le panier est vide
+    if (!materiels || materiels.length === 0) {
+        return res.redirect('/');
+    }
+
+    // On prépare une promesse pour s'assurer que tout est fini avant de rediriger
+    let completed = 0;
+    
+    // On boucle sur les tableaux envoyés par le formulaire
+    materiels.forEach((id_mat, index) => {
+        const voulu = parseInt(quantites[index]);
+        const fId = id_fournisseur || null;
+
+        // 1. On récupère le stock actuel pour ce matériel
+        db.query('SELECT stock_agence FROM materiel WHERE id = ?', [id_mat], (err, results) => {
+            if (err) throw err;
+
+            const stockDispo = results[0].stock_agence;
+            
+            // 2. Logique intelligente de répartition
+            let qte_ag = voulu > stockDispo ? stockDispo : voulu;
+            let qte_f = voulu > stockDispo ? (voulu - stockDispo) : 0;
+            
+            // 3. Insertion de la ligne de réservation
+            const sql = 'INSERT INTO reservation (id_evenement, id_materiel, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur) VALUES (?,?,?,?,?,?)';
+            db.query(sql, [id_event, id_mat, fId, voulu, qte_ag, qte_f], (err) => {
+                if (err) throw err;
+                
+                completed++;
+                // Une fois que le dernier matériel est traité, on rafraîchit la page
+                if (completed === materiels.length) {
+                    res.redirect('/');
+                }
+            });
+        });
+    });
+});*/
+/*app.post('/reserver-groupe', (req, res) => {
+    const { id_event, materiels, quantites, id_fournisseur } = req.body;
+    if (!materiels || materiels.length === 0) return res.redirect('/');
+
+    let completed = 0;
+    materiels.forEach((id_mat, index) => {
+        const voulu = parseInt(quantites[index]);
+        if (isNaN(voulu) || voulu <= 0) { completed++; return; }
+
+        db.query('SELECT stock_agence FROM materiel WHERE id = ?', [id_mat], (err, results) => {
+            const stockDispo = results[0].stock_agence;
+            let qte_ag = voulu > stockDispo ? stockDispo : voulu;
+            let qte_f = voulu > stockDispo ? (voulu - stockDispo) : 0;
+
+            const sqlIns = 'INSERT INTO reservation (id_evenement, id_materiel, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur, statut) VALUES (?,?,?,?,?,?, "en_cours")';
+            const sqlUpd = 'UPDATE materiel SET stock_agence = stock_agence - ? WHERE id = ?';
+
+            db.query(sqlIns, [id_event, id_mat, id_fournisseur || null, voulu, qte_ag, qte_f], (err) => {
+                db.query(sqlUpd, [qte_ag, id_mat], () => {
+                    completed++;
+                    if (completed === materiels.length) res.redirect('/');
+                });
+            });
+        });
+    });
+});
+app.post('/reserver-groupe', (req, res) => {
+    const { id_event, materiels, quantites, id_fournisseur } = req.body;
+    if (!materiels || materiels.length === 0) return res.redirect('/');
+
+    let completed = 0;
+    materiels.forEach((id_mat, index) => {
+        const voulu = parseInt(quantites[index]);
+        if (isNaN(voulu) || voulu <= 0) { completed++; return; }
+
+        db.query('SELECT stock_agence FROM materiel WHERE id = ?', [id_mat], (err, results) => {
+            const stockDispo = results[0].stock_agence;
+            // Dans ton INSERT de reservation, ajoute id_utilisateur
+const sqlIns = 'INSERT INTO reservation (id_evenement, id_materiel, id_utilisateur, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur, statut) VALUES (?,?,?,?,?,?,?, "en_cours")';
+// Et passe req.session.user.id dans les paramètres
+            let qte_ag = voulu > stockDispo ? stockDispo : voulu;
+            let qte_f = voulu > stockDispo ? (voulu - stockDispo) : 0;
+
+            const sqlIns = 'INSERT INTO reservation (id_evenement, id_materiel, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur, statut) VALUES (?,?,?,?,?,?, "en_cours")';
+            const sqlUpd = 'UPDATE materiel SET stock_agence = stock_agence - ? WHERE id = ?';
+            
+            // --- AJOUT POUR L'HISTORIQUE ---
+            const sqlLog = 'INSERT INTO historique_mouvements (id_utilisateur, id_materiel, type_action, quantite, date_action) VALUES (?, ?, "sortie", ?, NOW())';
+
+            db.query(sqlIns, [id_event, id_mat, id_fournisseur || null, voulu, qte_ag, qte_f], (err) => {
+                db.query(sqlUpd, [qte_ag, id_mat], () => {
+                    
+                    // On enregistre le mouvement dans l'historique ici
+                    db.query(sqlLog, [req.session.user.id, id_mat, voulu], (err) => {
+                        if (err) console.error("Erreur historique:", err);
+                        
+                        completed++;
+                        if (completed === materiels.length) res.redirect('/');
+                    });
+                    
+                });
+            });
+        });
+    });
+});*/// AUTO-RÉPARATION : Remplit le stock_total s'il est à 0 ou vide
+/*const repairSQL = "UPDATE materiel SET stock_total = stock_agence WHERE stock_total = 0 OR stock_total IS NULL";
+db.query(repairSQL, (err, result) => {
+    if (err) console.log("⚠️ Erreur réparation :", err);
+    else if (result.affectedRows > 0) console.log(`✅ Réparé : ${result.affectedRows} articles avec capacité 0.`);
+});*/// 3. Login simple
+/*app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    const sql = "SELECT a.*, r.nom_role FROM agence a JOIN roles r ON a.id_role = r.id WHERE email = ? AND mot_de_passe = ?";
+    db.query(sql, [email, password], (err, result) => {
+        if (result.length > 0) {
+            req.session.user = result[0];
+            res.redirect('/');
+        } else {
+            res.send("Erreur de connexion");
+        }
+    });
+});*/
+// Remplace le bloc app.post('/login', ...) par celui-ci
+/*const express = require('express');
+const mysql = require('mysql2');
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+const session = require('express-session');
+const sqlRes = "SELECT * FROM vue_tableau_bord ORDER BY id DESC";
+app.set('view engine', 'ejs');
+
+const db = mysql.createConnection({
+    host: 'localhost', user: 'root', password: '', 
+    database: 'agence_event', multipleStatements: true 
+});
+app.use(session({
+    secret: 'agence_secret_key',
+    resave: false,
+    saveUninitialized: true
+}));*/
+app.post('/reserver-groupe', (req, res) => {
+    const { id_event, materiels, quantites, id_fournisseur } = req.body;
+    if (!materiels || materiels.length === 0) return res.redirect('/');
+
+    let completed = 0;
+    materiels.forEach((id_mat, index) => {
+        const voulu = parseInt(quantites[index]);
+        if (isNaN(voulu) || voulu <= 0) { completed++; return; }
+
+        db.query('SELECT stock_agence FROM materiel WHERE id = ?', [id_mat], (err, results) => {
+            if (err) throw err;
+            
+            const stockDispo = results[0].stock_agence;
+            let qte_ag = voulu > stockDispo ? stockDispo : voulu;
+            let qte_f = voulu > stockDispo ? (voulu - stockDispo) : 0;
+
+            // ON DÉCLARE CHAQUE VARIABLE UNE SEULE FOIS ICI
+            const sqlIns = 'INSERT INTO reservation (id_evenement, id_materiel, id_fournisseur, quantite_voulue, qte_agence, qte_fournisseur, statut) VALUES (?,?,?,?,?,?, "en_cours")';
+            const sqlUpd = 'UPDATE materiel SET stock_agence = stock_agence - ? WHERE id = ?';
+            const sqlLog = 'INSERT INTO historique_mouvements (id_utilisateur, id_materiel, type_action, quantite, date_action) VALUES (?, ?, "sortie", ?, NOW())';
+
+            db.query(sqlIns, [id_event, id_mat, id_fournisseur || null, voulu, qte_ag, qte_f], (err) => {
+                if (err) throw err;
+
+                db.query(sqlUpd, [qte_ag, id_mat], (err) => {
+                    if (err) throw err;
+
+                    // On enregistre dans l'historique
+                    db.query(sqlLog, [req.session.user.id, id_mat, voulu], (err) => {
+                        if (err) console.error("Erreur historique:", err);
+                        
+                        completed++;
+                        if (completed === materiels.length) res.redirect('/');
+                    });
+                });
+            });
+        });
+    });
+});
+
+

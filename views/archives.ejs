@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>EventLogix | Archives</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 p-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <a href="/evenements" class="text-blue-600 hover:underline text-sm font-bold">← Retour aux événements</a>
+                <h1 class="text-3xl font-black text-slate-800 mt-2">Archives des Événements</h1>
+                <p class="text-slate-500 text-sm">Historique complet des prestations terminées</p>
+            </div>
+            <input type="text" id="searchInput" onkeyup="filterEvents()" placeholder="Rechercher dans l'historique..." 
+                   class="border border-slate-200 p-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-slate-400">
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                        <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Événement</th>
+                        <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Date & Heure</th>
+                        <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Lieu</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <% evenements.forEach(ev => { %>
+                        <tr class="opacity-75 hover:opacity-100 transition-opacity">
+                            <td class="p-4">
+                                <div class="font-bold text-slate-700"><%= ev.titre %></div>
+                                <div class="text-[10px] text-slate-400">ID #<%= ev.id %></div>
+                            </td>
+                            <td class="p-4 text-sm text-slate-600">
+                                <%= new Date(ev.date_event).toLocaleDateString('fr-FR') %> à <%= ev.heure_event ? ev.heure_event.substring(0, 5) : '--:--' %>
+                            </td>
+                            <td class="p-4 text-sm font-medium text-slate-500 italic">
+                                📍 <%= ev.lieu_event %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <% if (evenements.length === 0) { %>
+                <div class="p-10 text-center text-slate-400 italic">Aucun archive pour le moment.</div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        function filterEvents() {
+            const filter = document.getElementById("searchInput").value.toLowerCase();
+            const rows = document.querySelectorAll("tbody tr");
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+            });
+        }
+    </script>
+</body>
+</html>

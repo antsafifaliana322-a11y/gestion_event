@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>EventLogix | Gestion des Événements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 p-8">
+   <div class="mb-8 flex justify-between items-start">
+    <div>
+        <a href="/" class="text-blue-600 hover:underline text-sm font-bold">← Retour au Dashboard</a>
+        <h1 class="text-3xl font-black text-slate-800 mt-2">Planification des Événements</h1>
+    </div>
+
+    <a href="/archives" class="group flex items-center gap-2 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 px-5 py-2.5 rounded-2xl font-bold text-sm text-slate-600 shadow-sm transition-all active:scale-95">
+        <span class="text-lg group-hover:rotate-12 transition-transform">📜</span>
+        Voir l'Historique
+    </a>
+</div>
+        <div class="mb-6">
+   <div class="lg:col-span-2">
+    <div class="mb-4">
+        <div class="relative group">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" 
+                   id="searchInput" 
+                   onkeyup="filterEvents()" 
+                   placeholder="Rechercher par nom, lieu ou date..." 
+                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white text-sm"
+            >
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left">
+            </table>
+            
+        <div class="flex justify-between items-center mb-4">
+</div>
+        <div id="noResult" class="hidden p-8 text-center border-t border-slate-100">
+            <div class="text-3xl mb-2">🔍</div>
+            <p class="text-slate-500 italic text-sm">Aucun événement ne correspond à votre recherche.</p>
+        </div>
+    </div>
+</div>
+    <p id="noResult" class="hidden text-center text-slate-500 mt-4 italic text-sm">Aucun événement ne correspond à votre recherche.</p>
+</div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                        <span class="mr-2 text-blue-500">➕</span> Nouvel Événement
+                    </h2>
+                    <form action="/admin/evenement" method="POST" class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Titre</label>
+                            <input type="text" name="titre" placeholder="Nom de l'événement" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Date</label>
+                                <input type="date" name="date_event" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Heure</label>
+                                <input type="time" name="heure_event" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase" require>Lieu</label>
+                            <input type="text" name="lieu_event" placeholder="Lieu de la prestation" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                            CRÉER L'ÉVÉNEMENT
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b border-slate-100">
+                            <tr>
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Événement</th>
+                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                           <% evenements.forEach(ev => { 
+    const aujourdhui = new Date().setHours(0,0,0,0);
+    const dateEv = new Date(ev.date_event).setHours(0,0,0,0);
+    const estPasse = dateEv < aujourdhui;
+%>
+    <tr class="hover:bg-blue-50/50 transition-colors <%= estPasse ? 'bg-slate-50' : '' %>">
+        <td class="p-4">
+            <div class="flex items-center gap-2">
+                <span class="font-bold <%= estPasse ? 'text-slate-400' : 'text-slate-800' %>">
+                    <%= ev.titre %>
+                </span>
+                <% if(estPasse) { %>
+                    <span class="text-[9px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full border border-slate-200">ARCHIVÉ</span>
+                <% } else { %>
+                    <span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 uppercase font-black">Prochainement</span>
+                <% } %>
+            </div>
+        </td>
+        <td class="p-4">
+           <div class="text-sm font-medium <%= estPasse ? 'text-slate-400' : 'text-slate-600' %>">
+    📅 <%= ev.date_event ? new Date(ev.date_event).toLocaleDateString('fr-FR') : 'Date non définie' %> 
+    à <%= ev.heure_event ? ev.heure_event.substring(0, 5) : '--:--' %>
+</div>
+            <div class="text-xs <%= estPasse ? 'text-slate-300' : 'text-blue-500' %> font-bold">📍 <%= ev.lieu_event %></div>
+        </td>
+    </tr>
+<% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+
+
+function filterEvents() {
+    const input = document.getElementById("searchInput");
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll("tbody tr");
+    const noResult = document.getElementById("noResult");
+    let hasResults = false;
+
+    rows.forEach(row => {
+        // On récupère le texte des colonnes Titre, Date et Lieu
+        const text = row.innerText.toLowerCase();
+        
+        if (text.includes(filter)) {
+            row.style.display = "";
+            hasResults = true;
+        } else {
+            row.style.display = "none";
+        }
+    });
+
+    // Affichage du message d'erreur si besoin
+    noResult.classList.toggle("hidden", hasResults);
+}
+
+</script>
+</body>
+</html>
