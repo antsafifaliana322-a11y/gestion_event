@@ -15,12 +15,19 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-
 const db = mysql.createConnection({
+    host: process.env.MYSQLHOST || 'localhost', 
+    user: process.env.MYSQLUSER || 'root', 
+    password: process.env.MYSQLPASSWORD || '', 
+    database: process.env.MYSQLDATABASE || 'agence_event',
+    port: process.env.MYSQLPORT || 3306,
+    multipleStatements: true 
+});
+/*const db = mysql.createConnection({
     host: 'localhost', user: 'root', password: '', 
     database: 'agence_event', multipleStatements: true 
 });
-/*const db = mysql.createConnection({
+const db = mysql.createConnection({
     // Railway donnera ces informations automatiquement une fois en ligne
     host: process.env.MYSQLHOST || 'localhost',
     user: process.env.MYSQLUSER || 'root',
@@ -712,8 +719,9 @@ app.get('/equipe', (req, res) => {
         res.render('equipe', { membres: results[0], roles: results[1] });
     });
 });
-
-app.listen(4000, () => console.log('🚀 Serveur lancé sur http://localhost:4000'));
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`🚀 Serveur lancé sur le port ${PORT}`));
+//app.listen(4000, () => console.log('🚀 Serveur lancé sur http://localhost:4000'));
 /*const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Serveur lancé sur le port ${PORT}`);
