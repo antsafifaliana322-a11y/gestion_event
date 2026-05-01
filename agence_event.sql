@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : jeu. 30 avr. 2026 à 13:59
+-- Généré le : ven. 01 mai 2026 à 10:00
 -- Version du serveur : 10.4.27-MariaDB
 -- Version de PHP : 8.2.0
 
@@ -40,8 +40,7 @@ CREATE TABLE `agence` (
 --
 
 INSERT INTO `agence` (`id`, `nom`, `email`, `mot_de_passe`, `id_role`) VALUES
-(1, 'Princia', 'admin@agence.com', 'admin123', 1),
-(2, 'essai', 'essai@agence.com', '123456', 2);
+(1, 'Princia', 'admin@agence.com', 'admin123', 1);
 
 -- --------------------------------------------------------
 
@@ -53,14 +52,6 @@ CREATE TABLE `client` (
   `id` int(11) NOT NULL,
   `nom` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `client`
---
-
-INSERT INTO `client` (`id`, `nom`) VALUES
-(1, 'DDF'),
-(2, 'Client Test');
 
 -- --------------------------------------------------------
 
@@ -75,17 +66,16 @@ CREATE TABLE `evenement` (
   `date_event` date DEFAULT NULL,
   `heure_event` time DEFAULT NULL,
   `lieu_event` varchar(255) DEFAULT NULL,
-  `date_fin` date DEFAULT NULL
+  `date_fin` date DEFAULT NULL,
+  `id_prestation` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Déchargement des données de la table `evenement`
 --
 
-INSERT INTO `evenement` (`id`, `titre`, `id_client`, `date_event`, `heure_event`, `lieu_event`, `date_fin`) VALUES
-(6, 'essai', NULL, '2026-05-10', '10:10:00', 'ada', NULL),
-(7, 'tester ', NULL, '2026-05-01', '16:00:00', 'ggggggggg', NULL),
-(8, 'guyg', NULL, '2026-05-08', '16:50:00', 'hiuh', NULL);
+INSERT INTO `evenement` (`id`, `titre`, `id_client`, `date_event`, `heure_event`, `lieu_event`, `date_fin`, `id_prestation`) VALUES
+(1, 'Rakotto', NULL, '2026-06-05', NULL, 'mahazo', NULL, 'Sonorisation, Éclairage');
 
 -- --------------------------------------------------------
 
@@ -121,22 +111,6 @@ CREATE TABLE `historique_mouvement` (
   `date_action` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `historique_mouvement`
---
-
-INSERT INTO `historique_mouvement` (`id`, `id_utilisateur`, `id_materiel`, `type_action`, `quantite`, `date_action`) VALUES
-(1, 1, 48, 'retour', 1, '2026-04-30 11:36:15'),
-(2, 1, 48, 'retour', 1, '2026-04-30 11:38:32'),
-(3, 1, 48, 'retour', 1, '2026-04-30 11:39:01'),
-(4, 1, 48, 'retour', 1, '2026-04-30 11:43:06'),
-(5, 1, 49, 'retour', 1, '2026-04-30 11:44:38'),
-(6, 1, 28, 'retour', 1, '2026-04-30 11:45:54'),
-(7, 1, 35, 'retour', 1, '2026-04-30 11:56:51'),
-(8, 2, 49, 'sortie', 1, '2026-04-30 12:06:32'),
-(9, 1, 49, 'retour', 1, '2026-04-30 12:06:36'),
-(10, 1, 49, 'retour', 1, '2026-04-30 12:06:50');
-
 -- --------------------------------------------------------
 
 --
@@ -150,35 +124,6 @@ CREATE TABLE `materiel` (
   `id_prestation` int(11) DEFAULT NULL,
   `stock_total` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `materiel`
---
-
-INSERT INTO `materiel` (`id`, `nom_article`, `stock_agence`, `id_prestation`, `stock_total`) VALUES
-(19, 'Black Magik 6K', 0, 8, 1),
-(20, 'Black Magic 4K', 0, 8, 1),
-(21, 'Black Magic URSA 12K', 0, 8, 1),
-(22, 'Lumix S1H', 1, 8, 1),
-(23, 'Nikon 26', 2, 8, 2),
-(24, 'Nikon 750', 2, 8, 2),
-(25, 'canon 70 - 200 ', 1, 8, 1),
-(26, 'canon 24 - 70 mm ', 1, 8, 1),
-(27, 'canon 75mm ', 1, 8, 1),
-(28, 'canon 17 - 40 mm ', 1, 8, 1),
-(29, 'Carl zeiss 50 mm', 1, 8, 1),
-(30, 'Nokton 17 mm', 1, 8, 1),
-(31, 'Nikkor 85 mm ', 1, 8, 1),
-(32, 'Nikkor 35 mm ', 1, 8, 1),
-(33, 'Nikkor 28 mm ', 1, 8, 1),
-(34, 'Sigma 70 - 200', 1, 8, 1),
-(35, 'Bague objectif M4/3 Nikkor ', 1, 8, 1),
-(36, 'Bague objectif M4/3 Canon', 1, 8, 1),
-(37, 'Table ATEM switcher', 1, 8, 1),
-(38, 'HDMI MF', 1, 8, 1),
-(39, 'Zoom M6 ', 1, 8, 1),
-(40, 'Micro cravatte mm', 1, 8, 1),
-(49, 'tapitra', 22, 9, 22);
 
 -- --------------------------------------------------------
 
@@ -196,9 +141,12 @@ CREATE TABLE `prestation` (
 --
 
 INSERT INTO `prestation` (`id`, `nom_prestation`) VALUES
-(8, 'Vidéo'),
-(9, 'test'),
-(10, 'test');
+(1, 'Sonorisation'),
+(2, 'Éclairage'),
+(3, 'Captation Vidéo'),
+(4, 'Photographie'),
+(5, 'Traiteur'),
+(6, 'Décoration Thématique');
 
 -- --------------------------------------------------------
 
@@ -219,17 +167,6 @@ CREATE TABLE `reservation` (
   `date_reservation` datetime DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `reservation`
---
-
-INSERT INTO `reservation` (`id`, `id_evenement`, `id_materiel`, `id_fournisseur`, `id_utilisateur`, `quantite_voulue`, `qte_agence`, `qte_fournisseur`, `statut`, `date_reservation`) VALUES
-(1, 6, 49, NULL, NULL, 1, 1, 0, 'rendu', '2026-04-30 11:44:35'),
-(2, 8, 28, NULL, NULL, 1, 1, 0, 'rendu', '2026-04-30 11:45:48'),
-(3, 8, 35, NULL, NULL, 1, 1, 0, 'rendu', '2026-04-30 11:45:48'),
-(4, 6, 49, NULL, NULL, 1, 1, 0, 'rendu', '2026-04-30 11:57:18'),
-(5, 6, 49, NULL, NULL, 1, 1, 0, 'rendu', '2026-04-30 12:06:31');
-
 -- --------------------------------------------------------
 
 --
@@ -247,9 +184,7 @@ CREATE TABLE `roles` (
 
 INSERT INTO `roles` (`id`, `nom_role`) VALUES
 (1, 'Administrateur'),
-(4, 'Logistique'),
-(2, 'Photographe'),
-(3, 'Régisseur');
+(10, 'Photographe');
 
 -- --------------------------------------------------------
 
@@ -351,19 +286,19 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT pour la table `agence`
 --
 ALTER TABLE `agence`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `client`
 --
 ALTER TABLE `client`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `evenement`
 --
 ALTER TABLE `evenement`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `fournisseur`
@@ -375,31 +310,31 @@ ALTER TABLE `fournisseur`
 -- AUTO_INCREMENT pour la table `historique_mouvement`
 --
 ALTER TABLE `historique_mouvement`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `materiel`
 --
 ALTER TABLE `materiel`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `prestation`
 --
 ALTER TABLE `prestation`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `reservation`
 --
 ALTER TABLE `reservation`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `roles`
 --
 ALTER TABLE `roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Contraintes pour les tables déchargées

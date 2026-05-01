@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Agence - Réservations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div>
+                <a href="/" class="group flex items-center text-blue-600 hover:text-blue-800 transition-all font-semibold text-sm">
+                    <span class="mr-2 group-hover:-translate-x-1 transition-transform">←</span> Retour au Dashboard Principal
+                </a>
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight mt-2">Planification des Événements</h1>
+                <p class="text-slate-500 mt-1">Gérez les nouvelles demandes de vos clients en temps réel.</p>
+            </div>
+            
+            <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="font-bold text-slate-700"><%= evenements.length %> Demandes actives</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 bg-slate-50/30">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="text-2xl">🔔</span> Dernières Réservations
+                </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-slate-400 text-sm uppercase tracking-wider">
+                            <th class="px-8 py-5 font-semibold">Client & Projet</th>
+                            <th class="px-8 py-5 font-semibold text-center">Prestation</th>
+                            <th class="px-8 py-5 font-semibold text-center">Date prévue</th>
+                            <th class="px-8 py-5 font-semibold text-center">Lieu</th>
+                            <th class="px-8 py-5 font-semibold text-right">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <% if (evenements.length > 0) { %>
+                            <% evenements.forEach(event => { %>
+                                <tr class="hover:bg-blue-50/50 transition-colors group">
+                                    <td class="px-8 py-6">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold italic">
+                                                <%= event.titre ? event.titre.charAt(0).toUpperCase() : '?' %>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-900 font-bold group-hover:text-blue-600 transition-colors"><%= event.titre %></div>
+                                                <div class="text-[10px] text-slate-400 font-black uppercase tracking-widest">ID: #<%= event.id %></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- NOUVELLE COLONNE : PRESTATION SYNCHRONISÉE -->
+                                   <!-- COLONNE PRESTATION : Affiche les badges synchronisés avec la base -->
+<td class="px-8 py-6 text-center">
+    <div class="flex flex-wrap justify-center gap-2">
+        <% if (event.id_prestation && event.id_prestation.trim() !== "") { %>
+            <% 
+               // On transforme la chaîne enregistrée en tableau pour créer les badges
+               let liste = String(event.id_prestation).split(', '); 
+               liste.forEach(nom => { 
+            %>
+                <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
+                    ✨ <%= nom %>
+                </span>
+            <% }) %>
+        <% } else { %>
+            <span class="text-slate-400 italic text-xs">Aucun service</span>
+        <% } %>
+    </div>
+</td>
+                                    <td class="px-8 py-6 text-center">
+                                        <span class="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium">
+                                            📅 <%= new Date(event.date_event).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="px-8 py-6 text-center">
+                                        <span class="text-slate-600 font-medium text-sm">📍 <%= event.lieu_event %></span>
+                                    </td>
+
+                                    <td class="px-8 py-6 text-right">
+                                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest <%= event.statut === 'Confirmé' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' %>">
+                                            <%= event.statut || 'En attente' %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="px-8 py-20 text-center">
+                                    <div class="text-slate-200 mb-4 text-6xl">📦</div>
+                                    <p class="text-slate-400 font-bold uppercase tracking-widest text-sm">Aucune demande reçue</p>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-6 bg-slate-50/50 border-t border-slate-100 text-center">
+                <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]"> • • 2026</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

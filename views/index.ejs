@@ -6,26 +6,14 @@
     <title>EventLogix | Dashboard Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <style>
-        /* Force le défilement horizontal sur tous les conteneurs de tableaux sur mobile */
-table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Optionnel : empêche les textes de se couper pour garder une ligne propre */
-table td, table th {
-    white-space: nowrap;
-}
-    </style>
+ 
 </head>
 <body class="bg-slate-50 p-8" x-data="{menuOpen: false, panier: [], selectedMat: '', selectedMatNom: '', qte: 1 }">
     
     <div x-show="menuOpen" x-transition.opacity class="fixed inset-0 bg-slate-900/40 z-40" @click="menuOpen = false"></div>
 
    <div x-show="menuOpen" 
+   
      x-data="{ openSection: null }" 
      class="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl z-50 p-6 overflow-y-auto border-l border-slate-200"
      @click.away="menuOpen = false">
@@ -34,8 +22,16 @@ table td, table th {
         <h2 class="text-xl font-bold text-slate-800">⚙️ Administration</h2>
         <button @click="menuOpen = false" class="text-slate-400 hover:text-red-500 text-3xl">&times;</button>
     </div>
+     <a href="/dashboard" class="w-full flex justify-between items-center p-4 bg-slate-800 text-white rounded-xl hover:bg-blue-600 transition-all font-bold mb-4">
+    <span>🔔 Nouvelles Demandes Client</span>
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
     <a href="/evenements" class="w-full flex justify-between items-center p-4 bg-slate-800 text-white rounded-xl hover:bg-blue-600 transition-all font-bold mb-4">
     <span>📅 Gérer les Événements</span>
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
+ <a href="/equipe" class="w-full flex justify-between items-center p-4 bg-slate-800 text-white rounded-xl hover:bg-blue-600 transition-all font-bold mb-4">
+    <span>🧑 Ajouter des membres</span>
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
 </a>
     <div class="space-y-4">

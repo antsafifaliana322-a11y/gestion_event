@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails Événement | <%= event.titre %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+    @media print {
+        /* On cache les boutons et la barre de retour pour l'impression */
+        .no-print, 
+        nav, 
+        button, 
+        a[href="/"] {
+            display: none !important;
+        }
+        
+        /* On ajuste la marge pour que le PDF soit joli */
+        body {
+            background-color: white;
+            padding: 0;
+        }
+        .max-w-5xl {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+</style>
+</head>
+<body class="bg-slate-50 font-sans antialiased">
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2 rounded-lg shadow-blue-200 shadow-lg">
+                <i class="fas fa-calendar-check text-white text-xl"></i>
+            </div>
+            <h1 class="text-xl font-black text-slate-800 tracking-tight">Gestion Logistique</h1>
+            <button onclick="window.print()">
+                IMPRIMER
+            </button>
+        </div>
+        <a href="/" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Retour Dashboard
+        </a>
+    </nav>
+
+    <main class="max-w-5xl mx-auto p-6">
+        
+        <!-- Header de l'événement -->
+        <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 mb-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <i class="fas fa-file-invoice fa-6x"></i>
+            </div>
+            <div class="relative">
+                <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-black uppercase mb-4 tracking-widest">Fiche Événement</span>
+                <h2 class="text-4xl font-black text-slate-900 mb-2"><%= event.titre %></h2>
+                <div class="flex flex-wrap gap-6 text-slate-500 font-medium">
+                    <span class="flex items-center gap-2"><i class="fas fa-map-marker-alt text-blue-500"></i> <%= event.lieu_event %></span>
+                    <span class="flex items-center gap-2"><i class="fas fa-calendar text-blue-500"></i> <%= new Date(event.date_event).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+                    <span class="flex items-center gap-2"><i class="fas fa-clock text-blue-500"></i> <%= event.heure_event ? event.heure_event.substring(0, 5) : '--:--' %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Matériel -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 class="font-black text-slate-800 flex items-center gap-2 text-lg">
+                    <i class="fas fa-boxes-stacked text-blue-600"></i> 
+                    Matériel réservé
+                </h3>
+                <span class="bg-white px-3 py-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-500">
+                    <%= materiels.length %> articles listés
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-slate-400 uppercase text-[10px] font-black tracking-widest border-b border-slate-100">
+                            <th class="p-6">Nom de l'article</th>
+                            <th class="p-6">Quantité Sortie</th>
+                            <th class="p-6">État Actuel</th>
+                            <th class="p-6 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <% if(materiels.length > 0) { %>
+                            <% materiels.forEach(m => { %>
+                                <tr class="hover:bg-slate-50/50 transition-colors group">
+                                    <td class="p-6 font-bold text-slate-800">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <%= m.nom_article %>
+                                        </div>
+                                    </td>
+                                    <td class="p-6">
+                                        <span class="bg-slate-100 text-slate-700 px-3 py-1 rounded-md font-black text-sm">
+                                            × <%= m.qte_agence %>
+                                        </span>
+                                    </td>
+                                    <td class="p-6 text-sm">
+                                        <% if(m.statut === 'rendu') { %>
+                                            <span class="flex items-center gap-2 text-green-600 font-bold">
+                                                <i class="fas fa-circle-check"></i> Retourné
+                                            </span>
+                                        <% } else { %>
+                                            <span class="flex items-center gap-2 text-amber-500 font-bold">
+                                                <i class="fas fa-truck-ramp-box"></i> En cours
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                    <td class="p-6 text-right">
+                                        <% if(m.statut !== 'rendu') { %>
+                                            <form action="/admin/retour-materiel" method="POST">
+                                                <input type="hidden" name="id_reservation" value="<%= m.id %>">
+                                                <input type="hidden" name="id_materiel" value="<%= m.id_materiel %>">
+                                                <input type="hidden" name="qte_agence" value="<%= m.qte_agence %>">
+                                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-xs font-black py-2 px-4 rounded-xl shadow-lg shadow-green-100 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 ml-auto">
+                                                    <i class="fas fa-undo"></i> VALIDER RETOUR
+                                                </button>
+                                            </form>
+                                        <% } else { %>
+                                            <span class="text-xs font-bold text-slate-300">Aucune action requise</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="p-12 text-center text-slate-400">
+                                    <i class="fas fa-ghost fa-3x mb-4 block opacity-20"></i>
+                                    <p class="font-medium italic">Aucun matériel n'a été réservé pour cet événement.</p>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <footer class="mt-12 text-center text-slate-400 text-xs font-medium pb-12">
+            Agence événementielle &copy; 2026 - Gestion d'inventaire en temps réel
+        </footer>
+    </main>
+
+</body>
+</html>

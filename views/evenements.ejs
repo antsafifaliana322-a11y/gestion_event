@@ -16,6 +16,7 @@
         <span class="text-lg group-hover:rotate-12 transition-transform">📜</span>
         Voir l'Historique
     </a>
+    
 </div>
         <div class="mb-6">
    <div class="lg:col-span-2">
@@ -107,6 +108,7 @@
                 <% } %>
             </div>
         </td>
+
         <td class="p-4">
            <div class="text-sm font-medium <%= estPasse ? 'text-slate-400' : 'text-slate-600' %>">
     📅 <%= ev.date_event ? new Date(ev.date_event).toLocaleDateString('fr-FR') : 'Date non définie' %> 
@@ -114,6 +116,13 @@
 </div>
             <div class="text-xs <%= estPasse ? 'text-slate-300' : 'text-blue-500' %> font-bold">📍 <%= ev.lieu_event %></div>
         </td>
+        <td class="p-4 text-right">
+    <!-- On utilise "ev" car c'est le nom que tu as choisi dans ta boucle -->
+    <a href="/evenements/details/<%= ev.id %>" 
+       class="inline-block px-3 py-1 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">
+       🔍 Détails
+    </a>
+</td>
     </tr>
 <% }) %>
                         </tbody>
