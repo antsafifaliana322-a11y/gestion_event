@@ -596,11 +596,10 @@ app.post('/reserver-groupe', (req, res) => {
         });
     });
 });
-const puppeteer = require('puppeteer');
+
 
 app.get('/evenement/pdf/:id', async (req, res) => {
     try {
-        const browser = await puppeteer.launch();
         const page = await browser.newPage();
         
         // On redirige vers la route de détails qu'on a déjà créée
