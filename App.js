@@ -31,7 +31,7 @@ const db = mysql.createConnection({
     port: 26166,
     multipleStatements: true 
 });*/
-const db = mysql.createConnection({
+/*const db = mysql.createConnection({
     host: 'localhost', user: 'root', password: '', 
     database: 'agence_event', multipleStatements: true 
 });db.connect((err) => {
@@ -40,8 +40,8 @@ const db = mysql.createConnection({
         return;
     }
     console.log("✅ Connecté à la base locale (localhost)");
-});
-/*
+});*/
+
 const db = mysql.createConnection({
     // Railway donnera ces informations automatiquement une fois en ligne
     host: process.env.MYSQLHOST || 'localhost',
@@ -50,7 +50,7 @@ const db = mysql.createConnection({
     database: process.env.MYSQLDATABASE || 'agence_event',
     port: process.env.MYSQLPORT || 3306,
     multipleStatements: true 
-});*/
+});
 
 // 2. MIDDLEWARE GLOBAL (Pour "Bienvenue [Nom]" et protection)
 // 2. MIDDLEWARE GLOBAL (Modifié pour laisser passer le client)
@@ -342,7 +342,7 @@ app.post('/reservation-envoyer', (req, res) => {
             res.redirect('/evenements'); 
         });
     });
-});*/
+});
 app.post('/reservation-envoyer', (req, res) => {
     const { email_client, titre_evenement, date_event, lieu_event, id_prestation } = req.body;
     const prestationsStr = Array.isArray(id_prestation) ? id_prestation.join(', ') : id_prestation;
@@ -375,6 +375,31 @@ app.post('/reservation-envoyer', (req, res) => {
             res.redirect('/evenements');
         });
     }
+});*/
+app.post('/reservation-envoyer', (req, res) => {
+    const { email_client, titre_evenement, date_event, lieu_event, id_prestation, equipe } = req.body;
+    
+    // On gère les tableaux (checkboxes) pour les transformer en texte pour la BDD
+    const prestationsStr = Array.isArray(id_prestation) ? id_prestation.join(', ') : id_prestation;
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : equipe;
+
+    // 1. Chercher ou créer le client
+    db.query("INSERT IGNORE INTO client (email) VALUES (?)", [email_client], (err) => {
+        if (err) throw err;
+        
+        db.query("SELECT id FROM client WHERE email = ?", [email_client], (err, results) => {
+            const clientId = results[0].id;
+
+            // 2. Insérer l'événement avec l'ID client ET l'équipe
+            const sql = `INSERT INTO evenement (titre, id_client, date_event, lieu_event, id_prestation, equipe) 
+                         VALUES (?, ?, ?, ?, ?, ?)`;
+            
+            db.query(sql, [titre_evenement, clientId, date_event, lieu_event, prestationsStr, equipeStr], (err) => {
+                if (err) throw err;
+                res.redirect('/evenements');
+            });
+        });
+    });
 });
 // --- ROUTES AUTH ---
 app.get('/login', (req, res) => res.render('login'));
