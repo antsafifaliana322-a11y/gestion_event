@@ -15,7 +15,7 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
-const db = mysql.createConnection({
+/*const db = mysql.createConnection({
     host: process.env.MYSQLHOST || 'localhost', 
     user: process.env.MYSQLUSER || 'root', 
     password: process.env.MYSQLPASSWORD || '', 
@@ -23,10 +23,25 @@ const db = mysql.createConnection({
     port: process.env.MYSQLPORT || 3306,
     multipleStatements: true 
 });
-/*const db = mysql.createConnection({
+const db = mysql.createConnection({
+    host: 'shortline.proxy.rlwy.net', 
+    user: 'root', 
+    password: 'FudGMEyUccAwAqaYubkslTPVjhBhNYEh', 
+    database: 'railway',
+    port: 26166,
+    multipleStatements: true 
+});*/
+const db = mysql.createConnection({
     host: 'localhost', user: 'root', password: '', 
     database: 'agence_event', multipleStatements: true 
+});db.connect((err) => {
+    if (err) {
+        console.error("❌ Erreur : Impossible de se connecter au MySQL LOCAL :", err.message);
+        return;
+    }
+    console.log("✅ Connecté à la base locale (localhost)");
 });
+/*
 const db = mysql.createConnection({
     // Railway donnera ces informations automatiquement une fois en ligne
     host: process.env.MYSQLHOST || 'localhost',
@@ -49,6 +64,20 @@ app.use((req, res, next) => {
         return res.redirect('/login');
     }
     next();
+});
+app.post('/evenements/delete/:id', (req, res) => {
+    const id = req.params.id;
+    // On supprime d'abord les réservations liées pour éviter les erreurs de clé étrangère
+    const sqlDelRes = "DELETE FROM reservation WHERE id_evenement = ?";
+    const sqlDelEv = "DELETE FROM evenement WHERE id = ?";
+
+    db.query(sqlDelRes, [id], (err) => {
+        if (err) throw err;
+        db.query(sqlDelEv, [id], (err) => {
+            if (err) throw err;
+            res.redirect('/evenements');
+        });
+    });
 });
 // Afficher le formulaire de réservation au client
 // Cette route doit être AVANT app.listen
@@ -92,7 +121,9 @@ app.get('/reservation', (req, res) => {
         res.render('reservation-client', { prestations: results });
     });
 });
-
+app.get('/delete/:id', (req, res) => {
+    db.query('DELETE FROM reservation WHERE id = ?', [req.params.id], () => res.redirect('/'));
+});
 // 1. Garde cette route GET pour éviter l'erreur "Cannot GET"
 /*app.get('/reservation-envoyer', (req, res) => {
     res.redirect('/reservation');
@@ -262,7 +293,7 @@ app.post('/reservation-envoyer', (req, res) => {
         }
         res.redirect('/dashboard');
     });
-});*/
+});
 app.post('/reservation-envoyer', (req, res) => {
     let { nom_client, date_event, lieu_event, id_prestation } = req.body;
 
@@ -281,6 +312,69 @@ app.post('/reservation-envoyer', (req, res) => {
         }
         res.redirect('/dashboard');
     });
+});
+app.post('/reservation-envoyer', (req, res) => {
+    // 1. Récupération des données du formulaire
+    const { nom_client, titre_evenement, date_event, lieu_event, id_prestation } = req.body;
+    
+    // On transforme le tableau de prestations en chaîne de caractères pour ta colonne actuelle
+    const prestationsStr = Array.isArray(id_prestation) ? id_prestation.join(', ') : id_prestation;
+
+    // 2. PREMIÈRE ÉTAPE : Insérer le client
+    const sqlClient = "INSERT INTO client (nom) VALUES (?)";
+    
+    db.query(sqlClient, [nom_client], (err, result) => {
+        if (err) throw err;
+
+        // On récupère l'ID que MySQL vient de générer pour ce client
+        const clientId = result.insertId;
+
+        // 3. DEUXIÈME ÉTAPE : Insérer l'événement avec l'ID du client
+        const sqlEvent = `
+            INSERT INTO evenement (titre, id_client, date_event, lieu_event, id_prestation) 
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        db.query(sqlEvent, [titre_evenement, clientId, date_event, lieu_event, prestationsStr], (err, result) => {
+            if (err) throw err;
+            
+            // Redirection vers le dashboard une fois fini
+            res.redirect('/evenements'); 
+        });
+    });
+});*/
+app.post('/reservation-envoyer', (req, res) => {
+    const { email_client, titre_evenement, date_event, lieu_event, id_prestation } = req.body;
+    const prestationsStr = Array.isArray(id_prestation) ? id_prestation.join(', ') : id_prestation;
+
+    // 1. On cherche si le client existe déjà
+    const sqlCheck = "SELECT id FROM client WHERE email = ?";
+    
+    db.query(sqlCheck, [email_client], (err, results) => {
+        if (err) throw err;
+
+        if (results.length > 0) {
+            // Le client existe déjà, on utilise son ID
+            const clientId = results[0].id;
+            insertEvenement(clientId);
+        } else {
+            // Le client n'existe pas, on le crée
+            const sqlInsertClient = "INSERT INTO client (email) VALUES (?)";
+            db.query(sqlInsertClient, [email_client], (err, result) => {
+                if (err) throw err;
+                insertEvenement(result.insertId);
+            });
+        }
+    });
+
+    // Fonction helper pour éviter de répéter le code d'insertion
+    function insertEvenement(clientId) {
+        const sqlEvent = "INSERT INTO evenement (titre, id_client, date_event, lieu_event, id_prestation) VALUES (?, ?, ?, ?, ?)";
+        db.query(sqlEvent, [titre_evenement, clientId, date_event, lieu_event, prestationsStr], (err) => {
+            if (err) throw err;
+            res.redirect('/evenements');
+        });
+    }
 });
 // --- ROUTES AUTH ---
 app.get('/login', (req, res) => res.render('login'));
@@ -436,11 +530,238 @@ app.get('/', (req, res) => {
 // 1. Afficher le formulaire au client
 
 // 1. Correction pour /evenements (Redirige vers l'accueil ou affiche la vue)
-app.get('/evenements', (req, res) => {
+/*app.get('/evenements', (req, res) => {
     const sql = 'SELECT * FROM evenement WHERE date_event >= CURDATE() ORDER BY date_event ASC';
     db.query(sql, (err, results) => {
         if (err) throw err;
         res.render('evenements', { evenements: results });
+    });
+});*/
+/*app.get('/evenements', (req, res) => {
+    const editId = req.query.edit; // On récupère l'ID depuis l'URL (ex: /evenements?edit=2)
+    const sqlList = 'SELECT * FROM evenement WHERE date_event >= CURDATE() ORDER BY date_event ASC';
+    
+    db.query(sqlList, (err, results) => {
+        if (err) throw err;
+        
+        if (editId) {
+            const sqlEdit = 'SELECT * FROM evenement WHERE id = ?';
+            db.query(sqlEdit, [editId], (err, editResult) => {
+                if (err) throw err;
+                res.render('evenements', { 
+                    evenements: results, 
+                    eventToEdit: editResult[0] // On envoie l'événement à modifier
+                });
+            });
+        } else {
+            res.render('evenements', { 
+                evenements: results, 
+                eventToEdit: null // Mode création normale
+            });
+        }
+    });
+});*/
+/*app.get('/evenements', (req, res) => {
+    const editId = req.query.edit;
+    const search = req.query.search || ''; // Gestion de la recherche
+
+    // Requêtes pour les checklists
+    const sqlPrestations = "SELECT * FROM prestation";
+    const sqlEquipe = "SELECT id, nom FROM agence";
+    const sqlList = "SELECT * FROM evenement WHERE titre LIKE ? ORDER BY date_event ASC";
+
+    db.query(sqlPrestations, (err, prestations) => {
+        db.query(sqlEquipe, (err, membres) => {
+            db.query(sqlList, [`%${search}%`], (err, results) => {
+                if (err) throw err;
+
+                if (editId) {
+                    db.query('SELECT * FROM evenement WHERE id = ?', [editId], (err, editResult) => {
+                        res.render('evenements', { 
+                            evenements: results, 
+                            eventToEdit: editResult[0],
+                            prestations: prestations,
+                            membres: membres,
+                            search: search
+                        });
+                    });
+                } else {
+                    res.render('evenements', { 
+                        evenements: results, 
+                        eventToEdit: null,
+                        prestations: prestations,
+                        membres: membres,
+                        search: search
+                    });
+                }
+            });
+        });
+    });
+});
+*/
+/*app.get('/evenements', (req, res) => {
+    const editId = req.query.edit;
+    const search = req.query.search || '';
+
+    const sqlPrestations = "SELECT * FROM prestation";
+    // CORRECTION : On ajoute JOIN roles pour avoir nom_role
+    const sqlEquipe = "SELECT a.id, a.nom, r.nom_role FROM agence a JOIN roles r ON a.id_role = r.id";
+    const sqlList = "SELECT * FROM evenement WHERE titre LIKE ? ORDER BY date_event ASC";
+
+    db.query(sqlPrestations, (err, prestations) => {
+        db.query(sqlEquipe, (err, membres) => {
+            db.query(sqlList, [`%${search}%`], (err, results) => {
+                if (err) throw err;
+                res.render('evenements', { 
+                    evenements: results, 
+                    eventToEdit: null, // Simplifié pour l'exemple
+                    prestations: prestations,
+                    membres: membres, // Contient maintenant nom_role
+                    search: search
+                });
+            });
+        });
+    });
+});*/
+/*app.get('/evenements', (req, res) => {
+    const search = req.query.search || '';
+
+    const sqlPrestations = "SELECT * FROM prestation";
+    // Jointure pour afficher "Photographe" au lieu de "10"
+    const sqlEquipe = "SELECT a.id, a.nom, r.nom_role FROM agence a JOIN roles r ON a.id_role = r.id";
+    const sqlList = "SELECT * FROM evenement WHERE titre LIKE ? ORDER BY date_event ASC";
+
+    db.query(sqlPrestations, (err, prestations) => {
+        if (err) return res.status(500).send(err.message);
+
+        db.query(sqlEquipe, (err, membres) => {
+            if (err) return res.status(500).send(err.message);
+
+            db.query(sqlList, [`%${search}%`], (err, events) => {
+                if (err) return res.status(500).send(err.message);
+
+                res.render('evenements', { 
+                    evenements: events, 
+                    prestations: prestations,
+                    membres: membres, 
+                    search: search,
+                    eventToEdit: null 
+                });
+            });
+        });
+    });
+});
+app.get('/evenements', (req, res) => {
+    const editId = req.query.edit;
+    const fromResId = req.query.resId; // ID de la réservation cliente
+    const search = req.query.search || '';
+
+    const sqlPrestations = "SELECT * FROM prestation";
+    const sqlEquipe = "SELECT a.id, a.nom, r.nom_role FROM agence a JOIN roles r ON a.id_role = r.id";
+    const sqlList = "SELECT * FROM evenement WHERE titre LIKE ? ORDER BY date_event ASC";
+
+    db.query(`${sqlPrestations}; ${sqlEquipe}; ${sqlList}`, [`%${search}%`], (err, results) => {
+        if (err) throw err;
+
+        let eventToEdit = null;
+
+        // CAS 1 : Modification d'un événement existant
+        if (editId) {
+            eventToEdit = results[2].find(e => e.id == editId);
+        } 
+        // CAS 2 : Pré-remplissage depuis une réservation cliente (image_11ea98.png)
+        else if (fromResId) {
+            // On peut chercher les infos dans la vue du dashboard ou la table client
+            const sqlRes = "SELECT * FROM vue_tableau_bord WHERE id = ?";
+            db.query(sqlRes, [fromResId], (err, resData) => {
+                if (resData.length > 0) {
+                    const r = resData[0];
+                    eventToEdit = {
+                        titre: r.nom_client, // Le nom du client devient le titre par défaut
+                        date_event: r.date_event,
+                        heure_event: r.heure_event || "12:00",
+                        lieu_event: r.lieu_event,
+                        id_prestation: r.id_prestation, // Les prestations choisies par le client
+                        resId: fromResId // On garde l'ID pour valider plus tard
+                    };
+                }
+                renderPage(res, results, eventToEdit, search);
+            });
+            return;
+        }
+
+        renderPage(res, results, eventToEdit, search);
+    });
+});*/
+app.get('/evenements', (req, res) => {
+    const editId = req.query.edit;
+    const fromResId = req.query.resId; 
+    const search = req.query.search || '';
+
+    const sqlPrestations = "SELECT * FROM prestation";
+    const sqlEquipe = "SELECT a.id, a.nom, r.nom_role FROM agence a JOIN roles r ON a.id_role = r.id";
+    
+    // NOUVELLE REQUÊTE : On récupère l'email du client lié
+    const sqlList = `
+        SELECT e.*, c.email AS email_client 
+        FROM evenement e 
+        LEFT JOIN client c ON e.id_client = c.id 
+        WHERE e.titre LIKE ? 
+        ORDER BY e.date_event ASC
+    `;
+
+    db.query(`${sqlPrestations}; ${sqlEquipe}; ${sqlList}`, [`%${search}%`], (err, results) => {
+        if (err) throw err;
+
+        let eventToEdit = null;
+
+        if (editId) {
+            eventToEdit = results[2].find(e => e.id == editId);
+        } 
+        else if (fromResId) {
+            const sqlRes = "SELECT * FROM vue_tableau_bord WHERE id = ?";
+            db.query(sqlRes, [fromResId], (err, resData) => {
+                if (err) throw err; // Toujours vérifier l'erreur ici aussi
+                
+                if (resData.length > 0) {
+                    const r = resData[0];
+                    eventToEdit = {
+                        // Ici, on peut mettre un titre générique ou laisser le nom du client
+                        // mais on verra maintenant la différence dans le dashboard
+                        titre: `Projet de ${r.nom_client}`, 
+                        date_event: r.date_event,
+                        heure_event: r.heure_event || "12:00",
+                        lieu_event: r.lieu_event,
+                        id_prestation: r.id_prestation,
+                        resId: fromResId
+                    };
+                }
+                renderPage(res, results, eventToEdit, search);
+            });
+            return;
+        }
+
+        renderPage(res, results, eventToEdit, search);
+    });
+});
+
+function renderPage(res, results, eventToEdit, search) {
+    res.render('evenements', { 
+        prestations: results[0], 
+        membres: results[1], 
+        evenements: results[2], 
+        eventToEdit, 
+        search 
+    });
+}
+// Route pour enregistrer la modification (UPDATE)
+app.post('/evenements/update/:id', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event } = req.body;
+    const sql = "UPDATE evenement SET titre = ?, date_event = ?, heure_event = ?, lieu_event = ? WHERE id = ?";
+    
+    db.query(sql, [titre, date_event, heure_event, lieu_event, req.params.id], (err) => {
+        if (err) throw err;
+        res.redirect('/evenements');
     });
 });
 
@@ -499,7 +820,7 @@ app.post('/admin/fournisseur', (req, res) => {
 });
 // --- GESTION ÉVÉNEMENTS (CRUD & DÉTAILS) ---
 
-app.post('/admin/evenement', (req, res) => {
+/*app.post('/admin/evenement', (req, res) => {
     const { titre, date_event, heure_event, lieu_event } = req.body;
     const sql = 'INSERT INTO evenement (titre, date_event, heure_event, lieu_event) VALUES (?, ?, ?, ?)';
     db.query(sql, [titre, date_event, heure_event, lieu_event], (err) => {
@@ -507,8 +828,97 @@ app.post('/admin/evenement', (req, res) => {
         res.redirect('/'); 
     });
 });
+*/
+/*app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event, prestations, equipe } = req.body;
+    
+    // On transforme les tableaux en chaînes de caractères "Presta1, Presta2"
+    const prestationsStr = Array.isArray(prestations) ? prestations.join(', ') : prestations;
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : equipe;
 
-app.get('/evenements/details/:id', (req, res) => {
+    const sql = 'INSERT INTO evenement (titre, date_event, heure_event, lieu_event, id_prestation) VALUES (?, ?, ?, ?, ?)';
+    db.query(sql, [titre, date_event, heure_event, lieu_event, prestationsStr], (err) => {
+        if (err) throw err;
+        res.redirect('/evenements'); 
+    });
+});*/
+/*app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event, prestations, equipe } = req.body;
+    
+    // Transformation des tableaux en chaînes pour le stockage VARCHAR/TEXT
+    const prestationsStr = Array.isArray(prestations) ? prestations.join(', ') : prestations;
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : equipe;
+
+    // CORRECTION : Ajout de la colonne 'equipe' dans le INSERT
+    const sql = 'INSERT INTO evenement (titre, date_event, heure_event, lieu_event, id_prestation, equipe) VALUES (?, ?, ?, ?, ?, ?)';
+    
+    db.query(sql, [titre, date_event, heure_event, lieu_event, prestationsStr, equipeStr], (err) => {
+        if (err) {
+            console.error("Erreur d'insertion :", err.message);
+            return res.status(500).send("Erreur SQL");
+        }
+        res.redirect('/evenements'); 
+    });
+});
+app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event, prestations, equipe } = req.body;
+    
+    // Conversion des sélections multiples en chaînes de caractères
+    const prestationsStr = Array.isArray(prestations) ? prestations.join(', ') : (prestations || "");
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : (equipe || "");
+
+    // Requête SQL exacte correspondant à votre structure phpMyAdmin
+    const sql = 'INSERT INTO evenement (titre, date_event, lieu_event, id_prestation, equipe, heure_event) VALUES (?, ?, ?, ?, ?, ?)';
+    
+    db.query(sql, [titre, date_event, lieu_event, prestationsStr, equipeStr, heure_event], (err) => {
+        if (err) {
+            console.error("Erreur d'insertion :", err.message);
+            return res.status(500).send("Erreur lors de l'enregistrement : " + err.message);
+        }
+        res.redirect('/evenements'); 
+    });
+});app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event, prestations, equipe } = req.body;
+    
+    // Conversion sécurisée des tableaux en texte
+    const prestationsStr = Array.isArray(prestations) ? prestations.join(', ') : (prestations || "");
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : (equipe || "");
+
+    // CRITIQUE : Vérifiez bien l'orthographe de "equipe" ici
+    const sql = "INSERT INTO evenement (titre, date_event, heure_event, lieu_event, id_prestation, equipe) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    db.query(sql, [titre, date_event, heure_event, lieu_event, prestationsStr, equipeStr], (err) => {
+        if (err) {
+            console.error("❌ Erreur d'insertion :", err.message); // Si l'erreur persiste, elle s'affichera ici
+            return res.status(500).send("Erreur SQL : " + err.message);
+        }
+        res.redirect('/evenements'); 
+    });
+});*/
+app.post('/admin/evenement', (req, res) => {
+    const { titre, date_event, heure_event, lieu_event, prestations, equipe, resId } = req.body;
+    
+    const prestationsStr = Array.isArray(prestations) ? prestations.join(', ') : (prestations || "");
+    const equipeStr = Array.isArray(equipe) ? equipe.join(', ') : (equipe || "");
+
+    const sqlInsert = "INSERT INTO evenement (titre, date_event, heure_event, lieu_event, id_prestation, equipe) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    db.query(sqlInsert, [titre, date_event, heure_event, lieu_event, prestationsStr, equipeStr], (err) => {
+        if (err) return res.status(500).send(err.message);
+
+        // Si l'événement vient d'une réservation client, on valide le statut
+        if (resId) {
+            const sqlUpdateStatus = "UPDATE client SET statut = 'valide' WHERE id = ?";
+            db.query(sqlUpdateStatus, [resId], (err) => {
+                if (err) console.error("Erreur de mise à jour du statut");
+                res.redirect('/evenements');
+            });
+        } else {
+            res.redirect('/evenements');
+        }
+    });
+});
+/*app.get('/evenements/details/:id', (req, res) => {
     const sqlEv = "SELECT * FROM evenement WHERE id = ?";
     const sqlMat = "SELECT r.*, m.nom_article FROM reservation r JOIN materiel m ON r.id_materiel = m.id WHERE id_evenement = ?";
     db.query(`${sqlEv}; ${sqlMat}`, [req.params.id, req.params.id], (err, results) => {
@@ -516,7 +926,53 @@ app.get('/evenements/details/:id', (req, res) => {
         res.render('details-evenement', { event: results[0][0], materiels: results[1] });
     });
 });
+app.get('/evenements/details/:id', (req, res) => {
+    const sqlEv = "SELECT * FROM evenement WHERE id = ?";
+    const sqlMat = "SELECT r.*, m.nom_article FROM reservation r JOIN materiel m ON r.id_materiel = m.id WHERE id_evenement = ?";
+    
+    db.query(`${sqlEv}; ${sqlMat}`, [req.params.id, req.params.id], (err, results) => {
+        if (err) throw err;
 
+        const event = results[0][0];
+        const materiels = results[1];
+
+        // CRITIQUE : Créer la variable membresAssignes demandée par EJS
+        // On transforme la chaîne "Princia, Jean" en tableau ["Princia", "Jean"]
+        let membresAssignes = [];
+        if (event && event.equipe) {
+            membresAssignes = event.equipe.split(', ');
+        }
+
+        res.render('details-evenement', { 
+            event: event, 
+            materiels: materiels,
+            membresAssignes: membresAssignes // On envoie enfin la variable !
+        });
+    });
+});
+*/app.get('/evenements/details/:id', (req, res) => {
+    const sqlEv = "SELECT * FROM evenement WHERE id = ?";
+    const sqlMat = "SELECT r.*, m.nom_article FROM reservation r JOIN materiel m ON r.id_materiel = m.id WHERE id_evenement = ?";
+    
+    db.query(`${sqlEv}; ${sqlMat}`, [req.params.id, req.params.id], (err, results) => {
+        if (err) throw err;
+
+        const event = results[0][0];
+        
+        // On transforme la chaîne "Princia, Jean" en tableau ["Princia", "Jean"]
+        // Le .filter(n => n) permet d'éviter les éléments vides si la colonne est vide
+        let membresAssignes = [];
+        if (event && event.equipe) {
+            membresAssignes = event.equipe.split(', ').filter(nom => nom.trim() !== "");
+        }
+
+        res.render('details-evenement', { 
+            event: event, 
+            materiels: results[1],
+            membresAssignes: membresAssignes 
+        });
+    });
+});
 app.get('/admin/delete-event/:id', (req, res) => {
     db.query('DELETE FROM evenement WHERE id = ?', [req.params.id], (err) => {
         if (err) throw err;

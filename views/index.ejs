@@ -105,14 +105,21 @@
 </div>
 
     <div class="max-w-6xl mx-auto">
+       <div class="flex justify-between items-center mb-10">
+    <!-- Conteneur du titre et du logo -->
+    <div class="flex items-center space-x-3">
+        <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Tableau de Bord</h1>
         
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Tableau de Bord <span class="text-blue-600">Logistique</span></h1>
-            <button @click="menuOpen = true" class="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-all font-semibold text-slate-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                <span>Gérer les ressources</span>
-            </button>
-        </div>
+        <!-- Ton logo remplace le mot "Logistique" -->
+        <img src="/logo.png" alt="Logo" class="w-12 h-auto object-contain">
+    </div>
+
+    <!-- Le bouton reste à droite grâce au justify-between -->
+    <button @click="menuOpen = true" class="flex items-center space-x-2 bg-white border border-slate-200 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-50 transition-all font-semibold text-slate-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+        <span>Gérer les ressources</span>
+    </button>
+</div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
     <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-3">
@@ -242,10 +249,11 @@ function filtrerListe(input) {
 
     </script>
 </div>
-
+<div class="max-w-6xl mx-auto px-4 mb-6">
     <button type="submit" class="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-blue-600 shadow-xl transition-all">
         VALIDER LA PLANIFICATION GLOBALE
     </button>
+    </div>
 </form>
                 </div>   
     </form>
@@ -290,7 +298,7 @@ function ajouterLigne() {
 }
 </script>
 </div>
-        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200 mt-6">
             <table class="w-full text-left">
                 <thead class="bg-slate-800 text-white text-xs uppercase tracking-widest">
                     <tr>
@@ -382,7 +390,7 @@ function ajouterLigne() {
     </div>
 
     <footer class="mt-20 text-center text-slate-400 text-[10px] uppercase tracking-widest pb-10">
-        &copy; 2026 EventLogix ERP System • Intelligent Supply Management
+        &copy; Event ERP System • Intelligent Supply Management
     </footer>
 
 </body>

@@ -4,159 +4,195 @@
     <meta charset="UTF-8">
     <title>EventLogix | Gestion des Événements</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar pour les checklists */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-slate-50 p-8">
-   <div class="mb-8 flex justify-between items-start">
-    <div>
-        <a href="/" class="text-blue-600 hover:underline text-sm font-bold">← Retour au Dashboard</a>
-        <h1 class="text-3xl font-black text-slate-800 mt-2">Planification des Événements</h1>
-    </div>
+<body class="bg-slate-50 min-h-screen">
 
-    <a href="/archives" class="group flex items-center gap-2 bg-white border-2 border-slate-200 hover:border-blue-500 hover:text-blue-600 px-5 py-2.5 rounded-2xl font-bold text-sm text-slate-600 shadow-sm transition-all active:scale-95">
-        <span class="text-lg group-hover:rotate-12 transition-transform">📜</span>
-        Voir l'Historique
-    </a>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
     
-</div>
-        <div class="mb-6">
-   <div class="lg:col-span-2">
-    <div class="mb-4">
-        <div class="relative group">
-            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </span>
-            <input type="text" 
-                   id="searchInput" 
-                   onkeyup="filterEvents()" 
-                   placeholder="Rechercher par nom, lieu ou date..." 
-                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white text-sm"
-            >
-        </div>
-    </div>
-    
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-left">
-            </table>
-            
-        <div class="flex justify-between items-center mb-4">
-</div>
-        <div id="noResult" class="hidden p-8 text-center border-t border-slate-100">
-            <div class="text-3xl mb-2">🔍</div>
-            <p class="text-slate-500 italic text-sm">Aucun événement ne correspond à votre recherche.</p>
-        </div>
-    </div>
-</div>
-    <p id="noResult" class="hidden text-center text-slate-500 mt-4 italic text-sm">Aucun événement ne correspond à votre recherche.</p>
-</div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-8">
-                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
-                        <span class="mr-2 text-blue-500">➕</span> Nouvel Événement
-                    </h2>
-                    <form action="/admin/evenement" method="POST" class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Titre</label>
-                            <input type="text" name="titre" placeholder="Nom de l'événement" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Date</label>
-                                <input type="date" name="date_event" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Heure</label>
-                                <input type="time" name="heure_event" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase" require>Lieu</label>
-                            <input type="text" name="lieu_event" placeholder="Lieu de la prestation" class="w-full border p-2.5 rounded-xl bg-slate-50" required>
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
-                            CRÉER L'ÉVÉNEMENT
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b border-slate-100">
-                            <tr>
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Événement</th>
-                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase">Détails</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                           <% evenements.forEach(ev => { 
-    const aujourdhui = new Date().setHours(0,0,0,0);
-    const dateEv = new Date(ev.date_event).setHours(0,0,0,0);
-    const estPasse = dateEv < aujourdhui;
-%>
-    <tr class="hover:bg-blue-50/50 transition-colors <%= estPasse ? 'bg-slate-50' : '' %>">
-        <td class="p-4">
-            <div class="flex items-center gap-2">
-                <span class="font-bold <%= estPasse ? 'text-slate-400' : 'text-slate-800' %>">
-                    <%= ev.titre %>
-                </span>
-                <% if(estPasse) { %>
-                    <span class="text-[9px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full border border-slate-200">ARCHIVÉ</span>
-                <% } else { %>
-                    <span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 uppercase font-black">Prochainement</span>
-                <% } %>
-            </div>
-        </td>
-
-        <td class="p-4">
-           <div class="text-sm font-medium <%= estPasse ? 'text-slate-400' : 'text-slate-600' %>">
-    📅 <%= ev.date_event ? new Date(ev.date_event).toLocaleDateString('fr-FR') : 'Date non définie' %> 
-    à <%= ev.heure_event ? ev.heure_event.substring(0, 5) : '--:--' %>
-</div>
-            <div class="text-xs <%= estPasse ? 'text-slate-300' : 'text-blue-500' %> font-bold">📍 <%= ev.lieu_event %></div>
-        </td>
-        <td class="p-4 text-right">
-    <!-- On utilise "ev" car c'est le nom que tu as choisi dans ta boucle -->
-    <a href="/evenements/details/<%= ev.id %>" 
-       class="inline-block px-3 py-1 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all">
-       🔍 Détails
-    </a>
-</td>
-    </tr>
-<% }) %>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- BARRE SUPÉRIEURE : TITRE, RECHERCHE ET ARCHIVES -->
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-6">
+        <div>
+            <h1 class="text-3xl font-black text-slate-800 tracking-tighter uppercase">Planification</h1>
+            <div class="flex items-center gap-4 mt-1">
+                <p class="text-slate-500 text-sm">Gérez vos événements et assignez vos équipes.</p>
+                <a href="/archives" class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1 transition-colors">
+                    📂 Voir les archives
+                </a>
             </div>
         </div>
-    </div>
-    <script>
-
-
-function filterEvents() {
-    const input = document.getElementById("searchInput");
-    const filter = input.value.toLowerCase();
-    const rows = document.querySelectorAll("tbody tr");
-    const noResult = document.getElementById("noResult");
-    let hasResults = false;
-
-    rows.forEach(row => {
-        // On récupère le texte des colonnes Titre, Date et Lieu
-        const text = row.innerText.toLowerCase();
         
-        if (text.includes(filter)) {
-            row.style.display = "";
-            hasResults = true;
-        } else {
-            row.style.display = "none";
-        }
-    });
+        <!-- BARRE DE RECHERCHE -->
+        <form action="/evenements" method="GET" class="flex w-full md:w-auto gap-2">
+            <div class="relative w-full">
+                <input type="text" name="search" value="<%= typeof search !== 'undefined' ? search : '' %>" 
+                       placeholder="Rechercher un événement..." 
+                       class="w-full md:w-72 border border-slate-200 p-2.5 pl-10 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <span class="absolute left-3 top-3 text-slate-400">🔍</span>
+            </div>
+            <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-700 transition-all shadow-md active:scale-95">
+                Filtrer
+            </button>
+        </form>
+    </div>
 
-    // Affichage du message d'erreur si besoin
-    noResult.classList.toggle("hidden", hasResults);
-}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- COLONNE GAUCHE : FORMULAIRE DYNAMIQUE -->
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-8">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                    <span class="mr-2"><%= eventToEdit ? '📝' : '➕' %></span> 
+                    <%= eventToEdit ? 'Modifier l\'Événement' : 'Nouvel Événement' %>
+                </h2>
+                
+                <form action="<%= eventToEdit ? '/evenements/update/' + eventToEdit.id : '/admin/evenement' %>" method="POST" class="space-y-4">
+                    <input type="hidden" name="resId" value="<%= eventToEdit && eventToEdit.resId ? eventToEdit.resId : '' %>">
+                    <!-- Titre -->
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Titre de l'événement</label>
+                        <input type="text" name="titre" value="<%= eventToEdit ? eventToEdit.titre : '' %>" 
+                               placeholder="Ex: Mariage Princia & ..." 
+                               class="w-full border p-2.5 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all" required>
+                    </div>
+                    
+                    <!-- Date & Heure -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Date</label>
+                            <input type="date" name="date_event" value="<%= eventToEdit ? eventToEdit.date_event.toISOString().split('T')[0] : '' %>" 
+                                   class="w-full border p-2.5 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Heure</label>
+                            <input type="time" name="heure_event" value="<%= eventToEdit ? eventToEdit.heure_event : '' %>" 
+                                   class="w-full border p-2.5 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        </div>
+                    </div>
 
-</script>
+                    <!-- Lieu -->
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Lieu / Adresse</label>
+                        <input type="text" name="lieu_event" value="<%= eventToEdit ? eventToEdit.lieu_event : '' %>" 
+                               placeholder="Ex: Espace salohy..." 
+                               class="w-full border p-2.5 rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+
+                    <!-- CHECKLIST : PRESTATIONS -->
+                    <div>
+                        <label class="text-[10px] font-bold text-blue-500 uppercase tracking-widest block mb-2">Prestations incluses</label>
+                       <div class="border rounded-xl p-3 bg-slate-50 max-h-32 overflow-y-auto">
+        <% prestations.forEach(p => { %>
+            <label class="flex items-center">
+                <input type="checkbox" name="prestations" value="<%= p.nom_prestation %>" 
+                    <%= eventToEdit && eventToEdit.id_prestation && eventToEdit.id_prestation.includes(p.nom_prestation) ? 'checked' : '' %>>
+                <span class="ml-2 text-sm"><%= p.nom_prestation %></span>
+            </label>
+        <% }) %>
+    </div>
+                    </div>
+
+                    <!-- CHECKLIST : ASSIGNATION ÉQUIPE -->
+                    <div>
+                        <label class="text-[10px] font-bold text-amber-500 uppercase tracking-widest block mb-2">Assigner des membres</label>
+                      <div class="grid grid-cols-2 gap-2">
+    <% membres.forEach(m => { %>
+        <label class="flex items-center p-2 border rounded hover:bg-slate-50 cursor-pointer">
+            <input type="checkbox" name="equipe" value="<%= m.nom %>" class="mr-2">
+            <span class="text-sm">
+                <%= m.nom %> 
+                <b class="text-blue-600">(<%= m.nom_role %>)</b>
+            </span>
+        </label>
+    <% }) %>
+</div>
+                    </div>
+
+                    <!-- Bouton Submit -->
+                    <button type="submit" class="w-full <%= eventToEdit ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-100' %> text-white py-3 rounded-xl font-black shadow-lg transition-all active:scale-95">
+                        <%= eventToEdit ? 'METTRE À JOUR' : 'CRÉER L\'ÉVÉNEMENT' %>
+                    </button>
+
+                    <% if (eventToEdit) { %>
+                        <div class="text-center mt-2">
+                            <a href="/evenements" class="text-xs text-slate-400 hover:text-slate-600 hover:underline transition-colors">
+                                ✖ Annuler la modification
+                            </a>
+                        </div>
+                    <% } %>
+                </form>
+            </div>
+        </div>
+
+        <!-- COLONNE DROITE : TABLEAU -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-100">
+                        <tr>
+                            <th class="p-4 text-[10px] font-bold text-slate-400 uppercase">Événement</th>
+                            <th class="p-4 text-[10px] font-bold text-slate-400 uppercase">Équipes / Prestations</th>
+                            <th class="p-4 text-right text-[10px] font-bold text-slate-400 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (evenements.length > 0) { %>
+                            <% evenements.forEach(ev => { %>
+                                <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-bold text-slate-700 decoration-blue-200 underline-offset-4"><%= ev.titre %></div>
+                                        <div class="flex items-center text-[11px] text-red-500 font-semibold mt-1">
+        <span class="mr-1">📧</span> 
+        <%= ev.email_client ? ev.email_client : 'Aucun email associé' %>
+    </div>
+                                        <div class="text-[11px] text-slate-400 font-medium mt-1 uppercase">
+                                            📅 <%= new Date(ev.date_event).toLocaleDateString('fr-FR') %> à <%= ev.heure_event %>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400 italic">📍 <%= ev.lieu_event %></div>
+                                    </td>
+                                    
+                                    <td class="p-4">
+                                        <div class="flex flex-wrap gap-1">
+                                            <% if (ev.id_prestation) { 
+                                                ev.id_prestation.split(', ').forEach(equipe => { %>
+                                                    <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-bold rounded-md border border-blue-100 uppercase">
+                                                        🛡️ <%= equipe %>
+                                                    </span>
+                                                <% }); 
+                                            } else { %>
+                                                <span class="text-[10px] text-slate-300 italic">Non assigné</span>
+                                            <% } %>
+                                        </div>
+                                    </td>
+
+                                    <td class="p-4 text-right space-x-1 whitespace-nowrap">
+                                        <a href="/evenements?edit=<%= ev.id %>" class="inline-block p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-all" title="Modifier">✏️</a>
+                                        <a href="/evenements/details/<%= ev.id %>" class="inline-block p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all" title="Détails">🔍</a>
+                                        <form action="/evenements/delete/<%= ev.id %>" method="POST" class="inline" onsubmit="return confirm('Attention : Cela supprimera l\'événement et ses réservations. Continuer ?')">
+                                            <button type="submit" class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-all">🗑️</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="3" class="p-12 text-center text-slate-400 italic">
+                                    Aucun résultat trouvé pour votre recherche.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
